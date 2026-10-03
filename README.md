@@ -10,7 +10,7 @@
 
 ## 🔗 Live Demo
 
-👉 **[Launch Live App](https://weekly-168h-time-planner.vercel.app)** *(Replace with your deployed Vercel / GitHub Pages URL)*
+👉 **[Launch Live App](https://tusharimpact.github.io/weekly-time-planner/)**
 
 ---
 
@@ -107,7 +107,7 @@ vercel
 2. Navigate to **Pages** (under Code and automation).
 3. Set **Source** to `Deploy from a branch`.
 4. Select `main` branch and `/ (root)` folder.
-5. Click **Save**. Your app will be live at `https://your-username.github.io/weekly-time-planner/`!
+5. Click **Save**. Your app will be live at `https://tusharimpact.github.io/weekly-time-planner/`!
 
 ---
 
