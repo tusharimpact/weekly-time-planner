@@ -4,12 +4,14 @@
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #0f172a;
@@ -20,6 +22,15 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+/* Hide scrollbars for clean mobile tab sliders */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Schedule Cell styling */
@@ -45,6 +56,15 @@ body {
 .cell-slot.cell-dimmed {
   opacity: 0.25;
   filter: grayscale(0.7);
+}
+
+/* Single Day Feed Slot Card */
+.mobile-slot-card {
+  transition: transform 0.12s ease, border-color 0.15s ease, background-color 0.15s ease;
+  touch-action: manipulation;
+}
+.mobile-slot-card:active {
+  transform: scale(0.98);
 }
 
 /* Time slot row header */
@@ -82,7 +102,7 @@ body {
     background-color: white !important;
     color: black !important;
   }
-  header, footer, #active-brush-bar, #btn-export-word, #btn-add-legend, #btn-reset-defaults, #btn-clear-all {
+  header, footer, #active-brush-bar, #btn-export-word, #btn-add-legend, #btn-reset-defaults, #btn-clear-all, #mobile-sticky-toolbar {
     display: none !important;
   }
   .max-w-\[1600px\] {

@@ -60,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'leg_family', name: 'Family & Social', color: '#ec4899' },
   ];
 
+  // Detect initial mobile view
+  const isMobileInitial = window.innerWidth < 768;
+
   // 2. Application State
   let state = {
     legends: [...DEFAULT_LEGENDS],
@@ -67,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
     grid: {}, // Key: `${dayIndex}_${slotIndex}`, Value: legendId
     userAge: 28,
     activeFilterId: 'all',
+    viewMode: isMobileInitial ? 'day' : 'grid', // 'day' (Mobile Feed) or 'grid' (7-Day Matrix)
+    activeDayIndex: 0, // 0 = Saturday
   };
 
   let isMouseDown = false;
@@ -78,7 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderLifePerspective();
     renderColorPalette();
     renderLegends();
+    renderViewModeToggle();
+    renderSingleDayFeed();
     renderGridTable();
+    renderMobileStickyToolbar();
     updateStatistics();
     bindEvents();
 
@@ -109,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (parsed.grid) state.grid = parsed.grid;
         if (parsed.userAge) state.userAge = parsed.userAge;
 
-        // Ensure active brush exists
         if (!state.legends.find(l => l.id === state.activeBrushId)) {
           state.activeBrushId = state.legends[0].id;
         }
@@ -119,34 +126,25 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Could not load saved state, using defaults', e);
     }
 
-    // If no storage, build pre-rendered default schedule!
     applyPreRenderedDefaults();
   }
 
-  /**
-   * Pre-rendered Defaults Config:
-   * - 8 hours sleep: 10 PM to 6 AM (Slots 0 to 7) every day across all 7 days
-   * - 4 hours routine work: 6 AM - 8 AM (Slots 8, 9) and 7 PM - 9 PM (Slots 21, 22) every day
-   * - 9 to 5 work: 9 AM to 5 PM (Slots 11 to 18) on workdays (Sun, Mon, Tue, Wed, Thu)
-   */
   function applyPreRenderedDefaults() {
     state.grid = {};
     
-    // 7 days loop
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      // 1. Sleep: 10 PM to 6 AM (Slots 0,1,2,3,4,5,6,7) -> 8 hours
+      // 1. Sleep: 10 PM to 6 AM (Slots 0 to 7) -> 8 hours
       for (let slot = 0; slot <= 7; slot++) {
         state.grid[`${dayIndex}_${slot}`] = 'leg_sleep';
       }
 
-      // 2. Routine Work: 6 AM to 8 AM (Slots 8, 9) and 7 PM to 9 PM (Slots 21, 22) -> 4 hours
+      // 2. Routine Work: 6 AM to 8 AM (Slots 8, 9) & 7 PM to 9 PM (Slots 21, 22) -> 4 hours
       state.grid[`${dayIndex}_8`] = 'leg_routine';
       state.grid[`${dayIndex}_9`] = 'leg_routine';
       state.grid[`${dayIndex}_21`] = 'leg_routine';
       state.grid[`${dayIndex}_22`] = 'leg_routine';
 
       // 3. 9-to-5 Work: General Workdays (Sunday - Thursday, index 1 to 5)
-      // Slots 11 to 18 (9:00 AM to 5:00 PM) -> 8 hours per workday (40 total)
       if (dayIndex >= 1 && dayIndex <= 5) {
         for (let slot = 11; slot <= 18; slot++) {
           state.grid[`${dayIndex}_${slot}`] = 'leg_work';
@@ -158,6 +156,207 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 5. Render Functions
+
+  // Render View Mode Toggle
+  function renderViewModeToggle() {
+    const btnDay = document.getElementById('tab-btn-day');
+    const btnGrid = document.getElementById('tab-btn-grid');
+    const dayContainer = document.getElementById('view-day-container');
+    const gridContainer = document.getElementById('view-grid-container');
+
+    if (state.viewMode === 'day') {
+      btnDay.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md';
+      btnGrid.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-700/60';
+      dayContainer.classList.remove('hidden');
+      gridContainer.classList.add('hidden');
+    } else {
+      btnGrid.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md';
+      btnDay.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-700/60';
+      gridContainer.classList.remove('hidden');
+      dayContainer.classList.add('hidden');
+    }
+  }
+
+  // Single Day Mobile Feed Render
+  function renderSingleDayFeed() {
+    const dayName = DAYS[state.activeDayIndex];
+    document.getElementById('active-day-heading').textContent = dayName;
+
+    // Count day hours
+    let dayAllocated = 0;
+    for (let slot = 0; slot < 24; slot++) {
+      const key = `${state.activeDayIndex}_${slot}`;
+      if (state.grid[key] && state.legends.some(l => l.id === state.grid[key])) {
+        dayAllocated++;
+      }
+    }
+    const dayUnallocated = 24 - dayAllocated;
+    document.getElementById('active-day-subtitle').textContent = `Allocated: ${dayAllocated} hrs • ${dayUnallocated} hrs Unallocated`;
+
+    // Render Day Navigation Tabs
+    const navContainer = document.getElementById('day-tabs-nav');
+    navContainer.innerHTML = '';
+
+    DAYS.forEach((d, index) => {
+      const isSelected = index === state.activeDayIndex;
+      const tab = document.createElement('button');
+      tab.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+        isSelected
+          ? 'bg-blue-600 text-white shadow-md'
+          : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/60'
+      }`;
+      tab.textContent = d.substring(0, 3); // Sat, Sun...
+      tab.addEventListener('click', () => {
+        state.activeDayIndex = index;
+        renderSingleDayFeed();
+      });
+      navContainer.appendChild(tab);
+    });
+
+    // Render 24 Hourly Feed Cards for the active day
+    const feedContainer = document.getElementById('single-day-feed');
+    feedContainer.innerHTML = '';
+
+    TIME_SLOTS.forEach((slotLabel, slotIndex) => {
+      const cellKey = `${state.activeDayIndex}_${slotIndex}`;
+      const legendId = state.grid[cellKey];
+      const legend = state.legends.find(l => l.id === legendId);
+
+      const isFilteredOut = state.activeFilterId !== 'all' && legendId !== state.activeFilterId;
+
+      const card = document.createElement('div');
+      card.className = `mobile-slot-card p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer select-none ${
+        isFilteredOut ? 'opacity-30 grayscale' : ''
+      } ${
+        legend
+          ? 'bg-slate-800/90 border-slate-700'
+          : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
+      }`;
+
+      // Left: Time slot badge & legend name
+      const leftDiv = document.createElement('div');
+      leftDiv.className = 'flex items-center gap-3 min-w-0';
+
+      const colorSwatch = document.createElement('div');
+      colorSwatch.className = 'w-4 h-4 rounded-full flex-shrink-0 shadow-sm border border-white/20';
+      colorSwatch.style.backgroundColor = legend ? legend.color : '#475569';
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'min-w-0';
+      
+      const timeLabel = document.createElement('div');
+      timeLabel.className = 'text-xs font-bold text-slate-200';
+      timeLabel.textContent = slotLabel;
+
+      const statusLabel = document.createElement('div');
+      statusLabel.className = 'text-[11px] font-medium truncate mt-0.5';
+      if (legend) {
+        statusLabel.style.color = legend.color;
+        statusLabel.textContent = legend.name;
+      } else {
+        statusLabel.className = 'text-[11px] font-medium text-slate-500 italic';
+        statusLabel.textContent = 'Unallocated (Tap to paint)';
+      }
+
+      textDiv.appendChild(timeLabel);
+      textDiv.appendChild(statusLabel);
+
+      leftDiv.appendChild(colorSwatch);
+      leftDiv.appendChild(textDiv);
+
+      // Right: Quick Select Dropdown for direct mobile pick
+      const select = document.createElement('select');
+      select.className = 'px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-blue-500';
+      
+      const unallocOpt = document.createElement('option');
+      unallocOpt.value = 'eraser';
+      unallocOpt.textContent = 'Unallocated';
+      if (!legend) unallocOpt.selected = true;
+      select.appendChild(unallocOpt);
+
+      state.legends.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.id;
+        opt.textContent = l.name;
+        if (legend && legend.id === l.id) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener('change', (e) => {
+        e.stopPropagation();
+        const val = e.target.value;
+        if (val === 'eraser') {
+          delete state.grid[cellKey];
+        } else {
+          state.grid[cellKey] = val;
+        }
+        saveStateToStorage();
+        renderSingleDayFeed();
+        renderGridTable();
+        updateStatistics();
+      });
+
+      card.appendChild(leftDiv);
+      card.appendChild(select);
+
+      // Single Tap on Card to paint active brush
+      card.addEventListener('click', (e) => {
+        if (e.target.tagName === 'SELECT') return;
+        paintSlotKey(cellKey);
+        renderSingleDayFeed();
+      });
+
+      feedContainer.appendChild(card);
+    });
+  }
+
+  // Mobile Sticky Toolbar
+  function renderMobileStickyToolbar() {
+    const chipsContainer = document.getElementById('mobile-legend-chips');
+    if (!chipsContainer) return;
+    chipsContainer.innerHTML = '';
+
+    state.legends.forEach(legend => {
+      const isSelected = state.activeBrushId === legend.id;
+      const chip = document.createElement('button');
+      chip.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold flex-shrink-0 transition-all ${
+        isSelected
+          ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400'
+          : 'bg-slate-800 text-slate-300 border border-slate-700'
+      }`;
+      chip.innerHTML = `
+        <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${legend.color};"></span>
+        <span>${escapeHtml(legend.name)}</span>
+      `;
+      chip.addEventListener('click', () => {
+        state.activeBrushId = legend.id;
+        renderLegends();
+        renderMobileStickyToolbar();
+        updateActiveBrushBar();
+      });
+      chipsContainer.appendChild(chip);
+    });
+
+    // Eraser chip
+    const isEraserSelected = state.activeBrushId === 'eraser';
+    const eraserChip = document.createElement('button');
+    eraserChip.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold flex-shrink-0 transition-all ${
+      isEraserSelected
+        ? 'bg-amber-600 text-white shadow-md ring-2 ring-amber-400'
+        : 'bg-slate-800 text-slate-400 border border-slate-700'
+    }`;
+    eraserChip.innerHTML = `
+      <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+      <span>Eraser</span>
+    `;
+    eraserChip.addEventListener('click', () => {
+      state.activeBrushId = 'eraser';
+      renderLegends();
+      renderMobileStickyToolbar();
+      updateActiveBrushBar();
+    });
+    chipsContainer.appendChild(eraserChip);
+  }
 
   // Life Perspective Calculator
   function renderLifePerspective() {
@@ -184,7 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     container.innerHTML = '';
     
-    // Calculate allocated hours per legend
     const hoursCount = {};
     state.legends.forEach(l => hoursCount[l.id] = 0);
     
@@ -194,15 +392,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Populate filter select options
     filterSelect.innerHTML = '<option value="all">Show All Categories</option>';
 
-    // Render legend cards
     state.legends.forEach(legend => {
       const isSelected = state.activeBrushId === legend.id;
       const count = hoursCount[legend.id] || 0;
 
-      // Add to filter
       const opt = document.createElement('option');
       opt.value = legend.id;
       opt.textContent = `${legend.name} (${count}h)`;
@@ -210,21 +405,20 @@ document.addEventListener('DOMContentLoaded', () => {
       filterSelect.appendChild(opt);
 
       const card = document.createElement('div');
-      card.className = `group relative p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+      card.className = `group relative p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
         isSelected 
           ? 'bg-slate-800 border-blue-500 ring-2 ring-blue-500/40 shadow-lg shadow-blue-500/10' 
           : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700/80 hover:border-slate-600'
       }`;
       
       card.innerHTML = `
-        <div class="flex items-center justify-between gap-2 mb-2">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
           <div class="flex items-center gap-2 min-w-0">
             <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-sm" style="background-color: ${legend.color};"></span>
             <span class="font-bold text-xs text-white truncate">${escapeHtml(legend.name)}</span>
           </div>
           
-          <!-- Actions dropdown / buttons on hover -->
-          <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+          <div class="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
             <button class="btn-edit-legend p-1 text-slate-400 hover:text-white rounded hover:bg-slate-700/60" data-id="${legend.id}" title="Edit Name/Color">
               <i data-lucide="edit-3" class="w-3 h-3"></i>
             </button>
@@ -235,40 +429,41 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="flex items-baseline justify-between text-xs">
-          <span class="text-slate-400 font-medium">Allocated:</span>
-          <span class="font-bold text-slate-100">${count} <span class="text-[10px] font-normal text-slate-400">hrs</span></span>
+          <span class="text-slate-400 font-medium text-[11px]">Allocated:</span>
+          <span class="font-bold text-slate-100 text-xs">${count} <span class="text-[10px] font-normal text-slate-400">hrs</span></span>
         </div>
       `;
 
-      // Select brush on click
       card.addEventListener('click', (e) => {
         if (e.target.closest('.btn-edit-legend') || e.target.closest('.btn-delete-legend')) return;
         state.activeBrushId = legend.id;
         renderLegends();
+        renderMobileStickyToolbar();
         updateActiveBrushBar();
       });
 
       container.appendChild(card);
     });
 
-    // Add Eraser Brush Card
+    // Eraser Card
     const isEraserSelected = state.activeBrushId === 'eraser';
     const eraserCard = document.createElement('div');
-    eraserCard.className = `p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+    eraserCard.className = `p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
       isEraserSelected 
         ? 'bg-slate-800 border-amber-500 ring-2 ring-amber-500/40 shadow-lg' 
         : 'bg-slate-900/60 hover:bg-slate-800 border-slate-700/60'
     }`;
     eraserCard.innerHTML = `
-      <div class="flex items-center gap-2 mb-2">
+      <div class="flex items-center gap-2 mb-1.5">
         <span class="w-3.5 h-3.5 rounded-full bg-slate-600 flex-shrink-0"></span>
-        <span class="font-bold text-xs text-slate-300">Eraser (Unallocate)</span>
+        <span class="font-bold text-xs text-slate-300">Eraser</span>
       </div>
-      <div class="text-xs text-slate-500 text-right">Clear Cell</div>
+      <div class="text-[11px] text-slate-500 text-right">Clear Cell</div>
     `;
     eraserCard.addEventListener('click', () => {
       state.activeBrushId = 'eraser';
       renderLegends();
+      renderMobileStickyToolbar();
       updateActiveBrushBar();
     });
     container.appendChild(eraserCard);
@@ -304,13 +499,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-800/40 transition-colors';
 
-      // Time Slot Column (Row Header)
       const tdTime = document.createElement('td');
-      tdTime.className = 'p-2.5 text-center font-bold text-slate-300 bg-slate-850/90 border-r border-slate-700/80 time-slot-label whitespace-nowrap text-[11px]';
+      tdTime.className = 'p-2 text-center font-bold text-slate-300 bg-slate-850/90 border-r border-slate-700/80 time-slot-label whitespace-nowrap text-[10px] sm:text-[11px]';
       tdTime.textContent = slotLabel;
       tr.appendChild(tdTime);
 
-      // 7 Days Columns (Saturday to Friday)
       DAYS.forEach((dayName, dayIndex) => {
         const td = document.createElement('td');
         const cellKey = `${dayIndex}_${slotIndex}`;
@@ -322,7 +515,6 @@ document.addEventListener('DOMContentLoaded', () => {
         td.dataset.dayIndex = dayIndex;
         td.dataset.slotIndex = slotIndex;
 
-        // Apply background color if assigned
         if (legend) {
           td.style.backgroundColor = legend.color;
           td.style.color = '#ffffff';
@@ -335,7 +527,6 @@ document.addEventListener('DOMContentLoaded', () => {
           td.title = `${dayName} @ ${slotLabel}\nUnallocated`;
         }
 
-        // Apply filter dimming if active
         if (state.activeFilterId !== 'all') {
           if (legendId !== state.activeFilterId) {
             td.classList.add('cell-dimmed');
@@ -344,7 +535,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // Drag to paint events
         td.addEventListener('mousedown', (e) => {
           e.preventDefault();
           isMouseDown = true;
@@ -364,18 +554,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Paint Cell logic
+  function paintSlotKey(cellKey) {
+    if (state.activeBrushId === 'eraser') {
+      delete state.grid[cellKey];
+    } else {
+      state.grid[cellKey] = state.activeBrushId;
+    }
+    saveStateToStorage();
+    renderGridTable();
+    updateStatistics();
+  }
+
   function paintCell(tdCell) {
     const key = tdCell.dataset.key;
     if (!key) return;
 
-    if (state.activeBrushId === 'eraser') {
-      delete state.grid[key];
-    } else {
-      state.grid[key] = state.activeBrushId;
-    }
+    paintSlotKey(key);
 
-    // Re-render cell immediately for smooth performance
     const legendId = state.grid[key];
     const legend = state.legends.find(l => l.id === legendId);
     const dayName = DAYS[tdCell.dataset.dayIndex];
@@ -396,15 +591,15 @@ document.addEventListener('DOMContentLoaded', () => {
     tdCell.classList.add('cell-painting');
     setTimeout(() => tdCell.classList.remove('cell-painting'), 150);
 
-    updateStatistics();
-    saveStateToStorage();
+    if (state.viewMode === 'day') {
+      renderSingleDayFeed();
+    }
   }
 
   // Update Header Counters & Percentages
   function updateStatistics() {
     let allocated = 0;
     
-    // Count filled cells
     Object.values(state.grid).forEach(legendId => {
       if (legendId && state.legends.some(l => l.id === legendId)) {
         allocated++;
@@ -414,16 +609,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const unallocated = 168 - allocated;
     const percent = Math.min(100, Math.round((allocated / 168) * 100));
 
-    document.getElementById('stat-allocated').innerHTML = `${allocated} <span class="text-xs text-slate-400 font-normal">hrs</span>`;
-    document.getElementById('stat-unallocated').innerHTML = `${unallocated} <span class="text-xs text-slate-400 font-normal">hrs</span>`;
+    document.getElementById('stat-allocated').innerHTML = `${allocated} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
+    document.getElementById('stat-unallocated').innerHTML = `${unallocated} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
     document.getElementById('stat-percent').textContent = `${percent}%`;
     document.getElementById('stat-progress-bar').style.width = `${percent}%`;
 
-    // Re-render legend totals count in cards
     renderLegends();
+    renderMobileStickyToolbar();
   }
 
-  // Render Color Palette in Modal
   function renderColorPalette() {
     const picker = document.getElementById('color-palette-picker');
     picker.innerHTML = '';
@@ -447,9 +641,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 6. Bind Event Listeners
   function bindEvents() {
-    // Mouseup globally to end dragging paint brush
     window.addEventListener('mouseup', () => {
       isMouseDown = false;
+    });
+
+    // View Mode Tab Switching
+    document.getElementById('tab-btn-day').addEventListener('click', () => {
+      state.viewMode = 'day';
+      renderViewModeToggle();
+      renderSingleDayFeed();
+    });
+
+    document.getElementById('tab-btn-grid').addEventListener('click', () => {
+      state.viewMode = 'grid';
+      renderViewModeToggle();
+      renderGridTable();
+    });
+
+    // Single Day Prev/Next navigation buttons
+    document.getElementById('btn-prev-day').addEventListener('click', () => {
+      state.activeDayIndex = (state.activeDayIndex - 1 + 7) % 7;
+      renderSingleDayFeed();
+    });
+
+    document.getElementById('btn-next-day').addEventListener('click', () => {
+      state.activeDayIndex = (state.activeDayIndex + 1) % 7;
+      renderSingleDayFeed();
     });
 
     // Age Input change
@@ -463,6 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-legend-select').addEventListener('change', (e) => {
       state.activeFilterId = e.target.value;
       renderGridTable();
+      renderSingleDayFeed();
     });
 
     // Export Word Button
@@ -480,9 +698,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reset Defaults Button
     document.getElementById('btn-reset-defaults').addEventListener('click', () => {
-      if (confirm('Reset your schedule to the standard pre-rendered defaults (8h Sleep, 4h Routine, 9-5 Work)?')) {
+      if (confirm('Reset your schedule to standard pre-rendered defaults (8h Sleep, 4h Routine, 9-5 Work)?')) {
         applyPreRenderedDefaults();
         renderGridTable();
+        renderSingleDayFeed();
         updateStatistics();
       }
     });
@@ -493,11 +712,12 @@ document.addEventListener('DOMContentLoaded', () => {
         state.grid = {};
         saveStateToStorage();
         renderGridTable();
+        renderSingleDayFeed();
         updateStatistics();
       }
     });
 
-    // Add Legend Button -> Open Modal
+    // Add Legend Modal Trigger
     document.getElementById('btn-add-legend').addEventListener('click', () => {
       editingLegendId = null;
       document.getElementById('modal-legend-title').textContent = 'Add New Legend';
@@ -509,7 +729,6 @@ document.addEventListener('DOMContentLoaded', () => {
       openModal();
     });
 
-    // Color picker inputs sync
     document.getElementById('input-color-picker').addEventListener('input', (e) => {
       document.getElementById('input-custom-hex').value = e.target.value;
     });
@@ -521,7 +740,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Save Legend Modal Button
     document.getElementById('btn-save-legend').addEventListener('click', () => {
       const name = document.getElementById('input-legend-name').value.trim();
       const color = document.getElementById('input-custom-hex').value.trim();
@@ -532,32 +750,30 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (editingLegendId) {
-        // Edit existing legend
         const legend = state.legends.find(l => l.id === editingLegendId);
         if (legend) {
           legend.name = name;
           legend.color = color;
         }
       } else {
-        // Add new legend
         const newId = 'leg_' + Date.now();
         const newLegend = { id: newId, name, color };
         state.legends.push(newLegend);
-        state.activeBrushId = newId; // Auto select new legend
+        state.activeBrushId = newId;
       }
 
       saveStateToStorage();
       renderLegends();
+      renderMobileStickyToolbar();
       renderGridTable();
+      renderSingleDayFeed();
       updateStatistics();
       closeModal();
     });
 
-    // Modal Close buttons
     document.getElementById('btn-close-modal').addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
 
-    // Edit & Delete Legend Event Delegation
     document.getElementById('legends-list').addEventListener('click', (e) => {
       const editBtn = e.target.closest('.btn-edit-legend');
       const deleteBtn = e.target.closest('.btn-delete-legend');
@@ -579,24 +795,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = deleteBtn.dataset.id;
         const legend = state.legends.find(l => l.id === id);
         if (legend && confirm(`Delete legend "${legend.name}"? Allocated hours will become unallocated.`)) {
-          // Remove from state
           state.legends = state.legends.filter(l => l.id !== id);
           
-          // Clear matching slots in grid
           Object.keys(state.grid).forEach(key => {
             if (state.grid[key] === id) {
               delete state.grid[key];
             }
           });
 
-          // Reset active brush if deleted
           if (state.activeBrushId === id) {
             state.activeBrushId = state.legends[0]?.id || 'eraser';
           }
 
           saveStateToStorage();
           renderLegends();
+          renderMobileStickyToolbar();
           renderGridTable();
+          renderSingleDayFeed();
           updateStatistics();
         }
       }
@@ -617,6 +832,5 @@ document.addEventListener('DOMContentLoaded', () => {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }
 
-  // Launch App
   init();
 });

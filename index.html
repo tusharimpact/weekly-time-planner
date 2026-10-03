@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>168 Hours — Weekly Time & Life Planner</title>
   
   <!-- Tailwind CSS -->
@@ -40,48 +40,48 @@
 
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-blue-500 selection:text-white">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-blue-500 selection:text-white pb-24 md:pb-8">
 
   <!-- Main Container -->
-  <div class="max-w-[1600px] mx-auto px-4 py-6 space-y-6">
+  <div class="max-w-[1600px] mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
     <!-- Header Section -->
-    <header class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-5 shadow-xl">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+    <header class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow-xl">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
         
         <!-- App Title & Identity -->
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-black text-xl">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-black text-lg sm:text-xl flex-shrink-0">
             168
           </div>
           <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-2xl font-bold tracking-tight text-white">168 Hours Planner</h1>
-              <span class="px-2.5 py-0.5 text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full">Weekly Life OS</span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">168 Hours Planner</h1>
+              <span class="px-2 py-0.5 text-[10px] sm:text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full">Weekly Life OS</span>
             </div>
-            <p class="text-sm text-slate-400 mt-0.5">Master your 168 weekly hours • Saturday to Friday starting at 10 PM</p>
+            <p class="text-xs sm:text-sm text-slate-400 mt-0.5">Master your 168 weekly hours • Saturday to Friday starting at 10 PM</p>
           </div>
         </div>
 
         <!-- Live 168h Counter & Status Bar -->
-        <div class="flex flex-wrap items-center gap-4 bg-slate-900/80 border border-slate-700/50 p-3 rounded-xl">
-          <div class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-center min-w-[100px]">
-            <span class="block text-xs font-medium text-slate-400 uppercase tracking-wider">Total</span>
-            <span class="text-lg font-bold text-white">168 <span class="text-xs text-slate-400 font-normal">hrs</span></span>
+        <div class="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 sm:gap-4 bg-slate-900/80 border border-slate-700/50 p-2.5 sm:p-3 rounded-xl">
+          <div class="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-center">
+            <span class="block text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Total</span>
+            <span class="text-base sm:text-lg font-bold text-white">168 <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span></span>
           </div>
 
-          <div class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-center min-w-[110px]">
-            <span class="block text-xs font-medium text-slate-400 uppercase tracking-wider">Allocated</span>
-            <span id="stat-allocated" class="text-lg font-bold text-emerald-400">0 <span class="text-xs text-slate-400 font-normal">hrs</span></span>
+          <div class="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-center">
+            <span class="block text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Allocated</span>
+            <span id="stat-allocated" class="text-base sm:text-lg font-bold text-emerald-400">0 <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span></span>
           </div>
 
-          <div class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-center min-w-[110px]">
-            <span class="block text-xs font-medium text-slate-400 uppercase tracking-wider">Unallocated</span>
-            <span id="stat-unallocated" class="text-lg font-bold text-amber-400">168 <span class="text-xs text-slate-400 font-normal">hrs</span></span>
+          <div class="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-center">
+            <span class="block text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">Unallocated</span>
+            <span id="stat-unallocated" class="text-base sm:text-lg font-bold text-amber-400">168 <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span></span>
           </div>
 
           <!-- Progress Bar -->
-          <div class="w-36 hidden sm:block">
+          <div class="col-span-3 sm:w-36">
             <div class="flex justify-between text-xs text-slate-400 mb-1">
               <span>Planned</span>
               <span id="stat-percent" class="font-semibold text-slate-200">0%</span>
@@ -94,19 +94,21 @@
 
         <!-- Global Action Buttons -->
         <div class="flex flex-wrap items-center gap-2">
-          <button id="btn-export-word" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]">
+          <button id="btn-export-word" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition-all active:scale-[0.98]">
             <i data-lucide="file-text" class="w-4 h-4"></i>
             <span>Export Word (.docx)</span>
           </button>
           
-          <button id="btn-reset-defaults" title="Reset schedule to standard defaults (8h Sleep, 4h Routine, 9-5 Work)" class="flex items-center gap-1.5 px-3 py-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-600 transition">
+          <button id="btn-reset-defaults" title="Reset schedule to standard defaults (8h Sleep, 4h Routine, 9-5 Work)" class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-600 transition">
             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-            <span>Reset Pre-rendered</span>
+            <span class="hidden sm:inline">Reset Pre-rendered</span>
+            <span class="sm:hidden">Reset</span>
           </button>
 
-          <button id="btn-clear-all" title="Clear all allocated hours" class="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-red-950/40 hover:text-red-300 text-slate-400 text-xs font-medium rounded-xl border border-slate-700 transition">
+          <button id="btn-clear-all" title="Clear all allocated hours" class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-800 hover:bg-red-950/40 hover:text-red-300 text-slate-400 text-xs font-medium rounded-xl border border-slate-700 transition">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            <span>Clear Grid</span>
+            <span class="hidden sm:inline">Clear Grid</span>
+            <span class="sm:hidden">Clear</span>
           </button>
         </div>
 
@@ -114,36 +116,36 @@
     </header>
 
     <!-- Human Life Weeks Perspective Banner -->
-    <section class="bg-gradient-to-r from-indigo-950/70 via-slate-900 to-purple-950/70 border border-indigo-800/40 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+    <section class="bg-gradient-to-r from-indigo-950/70 via-slate-900 to-purple-950/70 border border-indigo-800/40 rounded-2xl p-4 sm:p-5 shadow-lg relative overflow-hidden">
       <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 relative z-10">
         
         <div class="space-y-1.5 max-w-2xl">
           <div class="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider">
             <i data-lucide="hourglass" class="w-4 h-4"></i>
             <span>Human Life Perspective</span>
           </div>
-          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2 flex-wrap">
             A human life is roughly <span class="text-indigo-400 font-extrabold underline decoration-indigo-500/40">4,000 weeks</span> (~76.9 years)
           </h2>
-          <p id="life-perspective-text" class="text-sm text-slate-300 leading-relaxed">
+          <p id="life-perspective-text" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
             You have spent <strong id="weeks-lived-text" class="text-amber-400">1,456 weeks</strong> (~36.4%) and have <strong id="weeks-remaining-text" class="text-emerald-400">2,544 weeks</strong> left. Each week has 168 hours. Make this week count!
           </p>
         </div>
 
         <!-- Age Configurator & Visual Life Mini Meter -->
-        <div class="flex items-center gap-4 bg-slate-900/90 border border-indigo-800/40 p-3 rounded-xl">
+        <div class="flex items-center justify-between sm:justify-start gap-4 bg-slate-900/90 border border-indigo-800/40 p-3 rounded-xl w-full md:w-auto">
           <div>
-            <label for="user-age-input" class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Your Age (Years)</label>
-            <input type="number" id="user-age-input" min="1" max="110" value="28" class="w-20 px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold text-center text-sm focus:outline-none focus:border-indigo-500" />
+            <label for="user-age-input" class="block text-[10px] sm:text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Your Age</label>
+            <input type="number" id="user-age-input" min="1" max="110" value="28" class="w-16 sm:w-20 px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold text-center text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
           </div>
 
           <div class="h-10 w-px bg-slate-700/60"></div>
 
           <div class="text-center px-1">
-            <span class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Weeks Lived</span>
-            <span id="life-weeks-badge" class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-lg text-xs font-bold block">
+            <span class="block text-[10px] sm:text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1">Weeks Lived</span>
+            <span id="life-weeks-badge" class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-lg text-xs font-bold block whitespace-nowrap">
               1,456 / 4,000
             </span>
           </div>
@@ -153,27 +155,27 @@
     </section>
 
     <!-- Top Legends Control Panel -->
-    <section class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-5 shadow-xl space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <section class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         
         <div>
-          <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <i data-lucide="palette" class="w-5 h-5 text-blue-400"></i>
-            <span>Schedule Legends & Categories</span>
+          <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <i data-lucide="palette" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-400"></i>
+            <span>Schedule Legends & Brushes</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Click a legend to select your active brush, then click or drag on the calendar grid below.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Select a legend brush, then tap or drag on schedule cells to paint.</p>
         </div>
 
         <div class="flex items-center gap-2">
           <!-- Filter toggle -->
-          <div class="relative">
-            <select id="filter-legend-select" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-blue-500">
+          <div class="relative flex-1 sm:flex-initial">
+            <select id="filter-legend-select" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-blue-500">
               <option value="all">Show All Categories</option>
             </select>
           </div>
 
           <!-- Add Legend Button -->
-          <button id="btn-add-legend" class="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-md transition">
+          <button id="btn-add-legend" class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-md transition flex-shrink-0">
             <i data-lucide="plus" class="w-4 h-4"></i>
             <span>Add Legend</span>
           </button>
@@ -182,38 +184,93 @@
       </div>
 
       <!-- Currently Selected Brush Banner -->
-      <div id="active-brush-bar" class="flex items-center justify-between px-4 py-2 bg-slate-900/90 border border-blue-500/30 rounded-xl text-xs">
+      <div id="active-brush-bar" class="flex items-center justify-between px-3.5 py-2 bg-slate-900/90 border border-blue-500/30 rounded-xl text-xs">
         <div class="flex items-center gap-2">
-          <span class="text-slate-400">Active Paint Brush:</span>
+          <span class="text-slate-400 text-[11px] sm:text-xs">Active Brush:</span>
           <span id="brush-color-swatch" class="w-3.5 h-3.5 rounded-full bg-blue-500 inline-block shadow-sm"></span>
           <span id="brush-name" class="font-bold text-white">Sleep</span>
         </div>
-        <span class="text-slate-400 text-[11px] hidden sm:inline">Tip: Hold mouse button and drag across cells to paint multiple hours quickly!</span>
+        <span class="text-slate-400 text-[11px] hidden sm:inline">Tap cells or drag across to paint continuous hours</span>
       </div>
 
       <!-- Legends Cards Container -->
-      <div id="legends-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div id="legends-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
         <!-- Rendered dynamically via JS -->
       </div>
     </section>
 
-    <!-- 168-Hour Time Grid Section -->
-    <section class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-5 shadow-xl space-y-4">
+    <!-- View Mode Selector Tabs (Mobile & Desktop) -->
+    <div class="flex items-center justify-between bg-slate-800/90 border border-slate-700/80 p-1.5 rounded-2xl shadow-lg">
+      <div class="flex items-center gap-1 w-full sm:w-auto">
+        <button id="tab-btn-day" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md">
+          <i data-lucide="smartphone" class="w-4 h-4"></i>
+          <span>Single Day Feed (Mobile)</span>
+        </button>
+        <button id="tab-btn-grid" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-700/60">
+          <i data-lucide="grid" class="w-4 h-4"></i>
+          <span>7-Day Matrix Overview</span>
+        </button>
+      </div>
+
+      <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 pr-2">
+        <i data-lucide="info" class="w-3.5 h-3.5 text-blue-400"></i>
+        <span>Switch view modes anytime</span>
+      </div>
+    </div>
+
+    <!-- MOBILE / SINGLE DAY FEED VIEW -->
+    <section id="view-day-container" class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+      
+      <!-- Day Switcher Horizontal Slider -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+          <div class="flex items-center gap-2">
+            <button id="btn-prev-day" class="p-2 bg-slate-900 border border-slate-700 hover:border-slate-500 rounded-xl text-slate-300 transition active:scale-95">
+              <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </button>
+            <div>
+              <h2 id="active-day-heading" class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                Saturday
+              </h2>
+              <span id="active-day-subtitle" class="text-xs text-slate-400">Allocated: 12 hrs • 12 hrs Free</span>
+            </div>
+          </div>
+
+          <button id="btn-next-day" class="p-2 bg-slate-900 border border-slate-700 hover:border-slate-500 rounded-xl text-slate-300 transition active:scale-95">
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Horizontal Scrollable Day Badges -->
+        <div id="day-tabs-nav" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- Single Day Hourly Feed -->
+      <div id="single-day-feed" class="space-y-2.5">
+        <!-- 24 hourly cards generated dynamically by app.js -->
+      </div>
+
+    </section>
+
+    <!-- 168-HOUR TIME GRID MATRIX VIEW -->
+    <section id="view-grid-container" class="hidden bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
       
       <!-- Grid Header & Quick Time Actions -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/60 pb-3">
         <div>
-          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
             <i data-lucide="calendar" class="w-5 h-5 text-indigo-400"></i>
             <span>Weekly Schedule Matrix (168 Hours)</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Horizontal: Saturday to Friday • Vertical: 10:00 PM (Night) to 9:00 PM</p>
+          <p class="text-xs text-slate-400 mt-0.5">Saturday to Friday • 10:00 PM (Night) to 9:00 PM</p>
         </div>
 
         <div class="flex items-center gap-2 text-xs text-slate-400">
           <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg">
             <span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
-            Unallocated Hour
+            Unallocated
           </span>
           <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg">
             <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-blue-400"></i>
@@ -224,10 +281,10 @@
 
       <!-- Scrollable Grid Container -->
       <div class="overflow-x-auto rounded-xl border border-slate-700/80 bg-slate-900/90 shadow-inner">
-        <table id="schedule-grid-table" class="w-full border-collapse text-left min-w-[900px] select-none">
+        <table id="schedule-grid-table" class="w-full border-collapse text-left min-w-[850px] select-none">
           <thead>
             <tr class="bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider border-b border-slate-700">
-              <th class="p-3 w-36 text-center border-r border-slate-700/80 bg-slate-850">
+              <th class="p-3 w-32 text-center border-r border-slate-700/80 bg-slate-850">
                 Time Slot <br/><span class="text-[10px] text-slate-400 font-normal">Starts 10 PM</span>
               </th>
               <th class="p-3 text-center border-r border-slate-700/50">Saturday</th>
@@ -247,20 +304,30 @@
 
     </section>
 
+    <!-- STICKY MOBILE LEGEND BRUSH TOOLBAR (Fixed at Bottom on Mobile) -->
+    <div id="mobile-sticky-toolbar" class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-700/80 px-3 py-2.5 z-40 shadow-2xl">
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-none">
+        <span class="text-[10px] uppercase font-bold text-slate-400 flex-shrink-0 tracking-wider">Paint Brush:</span>
+        <div id="mobile-legend-chips" class="flex items-center gap-2 flex-shrink-0">
+          <!-- Rendered dynamically via JS -->
+        </div>
+      </div>
+    </div>
+
     <!-- Footer / Perspective & LocalStorage info -->
     <footer class="text-center py-6 text-xs text-slate-500 space-y-2">
-      <p>100% Private & Local • All your schedule data is stored securely in your browser's local storage.</p>
-      <p>© 168 Hours Weekly Life OS • Built with precision for your weekly time management.</p>
+      <p>100% Private & Local • Stored securely in your browser.</p>
+      <p>© 168 Hours Weekly Life OS • Mobile & Desktop Optimized</p>
     </footer>
 
   </div>
 
   <!-- Add / Edit Legend Modal -->
   <div id="modal-legend" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-200">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 transform scale-95 transition-transform duration-200">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 sm:space-y-5 transform scale-95 transition-transform duration-200">
       
       <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-        <h3 id="modal-legend-title" class="text-lg font-bold text-white">Add New Legend</h3>
+        <h3 id="modal-legend-title" class="text-base sm:text-lg font-bold text-white">Add New Legend</h3>
         <button id="btn-close-modal" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
@@ -274,7 +341,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-2">Color Palette</label>
-          <div id="color-palette-picker" class="grid grid-cols-7 gap-2.5">
+          <div id="color-palette-picker" class="grid grid-cols-7 gap-2">
             <!-- Palette swatches injected via JS -->
           </div>
         </div>
