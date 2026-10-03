@@ -1,0 +1,100 @@
+/* Custom styles for 168 Hours Weekly Time Planner */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Schedule Cell styling */
+.cell-slot {
+  position: relative;
+  transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  user-select: none;
+  cursor: pointer;
+  min-height: 42px;
+}
+
+.cell-slot:hover {
+  filter: brightness(1.18);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+  z-index: 10;
+}
+
+.cell-slot.cell-painting {
+  transform: scale(0.97);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+}
+
+.cell-slot.cell-dimmed {
+  opacity: 0.25;
+  filter: grayscale(0.7);
+}
+
+/* Time slot row header */
+.time-slot-label {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Legend card selection active state */
+.legend-card-active {
+  ring: 2px;
+  ring-color: #3b82f6;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 15px -3px rgba(59, 130, 246, 0.4);
+}
+
+/* Modal animation support */
+#modal-legend.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+#modal-legend.active > div {
+  transform: scale(1);
+}
+
+/* Custom palette swatch selected state */
+.palette-swatch-selected {
+  outline: 3px solid #ffffff;
+  outline-offset: 1px;
+}
+
+/* Print styling optimization */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  header, footer, #active-brush-bar, #btn-export-word, #btn-add-legend, #btn-reset-defaults, #btn-clear-all {
+    display: none !important;
+  }
+  .max-w-\[1600px\] {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  .bg-slate-800\/80, .bg-slate-900\/90, .bg-slate-900 {
+    background-color: white !important;
+    border-color: #ccc !important;
+    color: black !important;
+  }
+  .cell-slot {
+    border: 1px solid #ddd !important;
+  }
+}
