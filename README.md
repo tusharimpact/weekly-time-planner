@@ -44,6 +44,8 @@ To save time, the planner pre-renders essential weekly routines:
 
 ## ✨ Key Features
 
+- 📊 **Daily & Weekly Percentage Metrics:** Live percentage breakdown per legend across both daily (24h) and weekly (168h) allocations.
+- 🎯 **Click-to-Toggle Box Selection:** Tap/click any cell to assign the active legend brush. Tap the same cell again to unselect it and revert to unallocated time.
 - ⏰ **Custom Time Block Units:** Select your preferred planning block granularity from the top bar dropdown:
   - **1 Hour Blocks** (Default - 168 total blocks)
   - **15 Min Blocks** (672 total blocks for micro-tasking)

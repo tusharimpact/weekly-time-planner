@@ -196,7 +196,7 @@
             <i data-lucide="palette" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-400"></i>
             <span>Schedule Legends & Brushes</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Select a legend brush, then tap or drag on schedule cells to paint.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Select a legend brush. Tap any box to toggle (select/unselect) or drag across to paint continuous blocks.</p>
         </div>
 
         <!-- Controls: Time Block Selector, Filter & Add Legend -->
@@ -241,11 +241,11 @@
         </div>
         <div class="flex items-center gap-3 text-slate-400 text-[11px]">
           <span id="active-unit-badge" class="px-2 py-0.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded font-semibold">1 Hour Blocks</span>
-          <span class="hidden sm:inline">Tap cells or drag across to paint continuous hours</span>
+          <span class="hidden sm:inline">Tap cell to toggle (select/unselect) • Drag to paint continuous blocks</span>
         </div>
       </div>
 
-      <!-- Legends Cards Container -->
+      <!-- Legends Cards Container (Shows Daily & Weekly Percentages per Legend) -->
       <div id="legends-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
         <!-- Rendered dynamically via JS -->
       </div>
@@ -293,6 +293,23 @@
           </button>
         </div>
 
+        <!-- DAILY PERCENTAGE STACKED BAR CHART FOR SELECTED DAY -->
+        <div class="space-y-1 bg-slate-900/90 border border-slate-700/70 p-3 rounded-xl">
+          <div class="flex justify-between items-center text-xs font-bold text-slate-300 mb-1">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-indigo-400"></i>
+              Daily Category Breakdown (% of Day)
+            </span>
+            <span id="daily-planned-pct-text" class="text-emerald-400">83.3% Allocated</span>
+          </div>
+          <div id="daily-stacked-progress-bar" class="w-full bg-slate-800 h-3 rounded-full overflow-hidden flex border border-slate-700">
+            <!-- Stacked bar segments injected via app.js -->
+          </div>
+          <div id="daily-legend-pills" class="flex flex-wrap items-center gap-2 pt-1.5 text-[10px]">
+            <!-- Dynamic daily legend pills -->
+          </div>
+        </div>
+
         <!-- Horizontal Scrollable Day Badges -->
         <div id="day-tabs-nav" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           <!-- Rendered dynamically by app.js -->
@@ -326,12 +343,12 @@
           </span>
           <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg">
             <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-blue-400"></i>
-            Click / Drag to paint
+            Tap box to toggle select/unselect
           </span>
         </div>
       </div>
 
-      <!-- Scrollable Grid Container -->
+      <!-- Scrollable Grid Container with Table Footer Daily Summary -->
       <div class="overflow-x-auto rounded-xl border border-slate-700/80 bg-slate-900/90 shadow-inner">
         <table id="schedule-grid-table" class="w-full border-collapse text-left min-w-[850px] select-none">
           <thead>
@@ -351,6 +368,9 @@
           <tbody id="grid-tbody" class="divide-y divide-slate-800/60 text-xs">
             <!-- Rows generated dynamically by app.js -->
           </tbody>
+          <tfoot id="grid-tfoot" class="bg-slate-800/90 text-slate-200 text-xs font-bold border-t-2 border-slate-700 divide-x divide-slate-700/60">
+            <!-- Footer Daily Summary generated dynamically by app.js -->
+          </tfoot>
         </table>
       </div>
 
@@ -369,7 +389,7 @@
     <!-- Footer / Perspective & LocalStorage info -->
     <footer class="text-center py-6 text-xs text-slate-500 space-y-2">
       <p>100% Private & Local • Stored securely in your browser.</p>
-      <p>© 168 Hours Weekly Life OS • Custom Block Units (15m, 30m, 1h, 2h, 4h)</p>
+      <p>© 168 Hours Weekly Life OS • Daily & Weekly Percentages • Click-to-Toggle Assignment</p>
     </footer>
 
   </div>

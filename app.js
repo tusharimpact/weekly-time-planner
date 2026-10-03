@@ -1,5 +1,11 @@
 /**
  * 168 Hours Weekly Life & Time Planner - Core App Logic
+ * Features:
+ * - Dynamic Time Block Units (15m, 30m, 1h, 2h, 4h)
+ * - Click-to-Toggle Assignment (Select / Unselect)
+ * - Daily & Weekly Percentage Breakdown for every Legend & Day
+ * - Mobile Single Day Agenda Feed & 7-Day Matrix Table
+ * - Human Life Perspective Calculator
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -42,12 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
     grid: {},
     userAge: 28,
     activeFilterId: 'all',
-    viewMode: isMobileInitial ? 'day' : 'grid', // 'day' or 'grid'
+    viewMode: isMobileInitial ? 'day' : 'grid',
     activeDayIndex: 0, // 0 = Saturday
-    unitMinutes: 60, // Default 1 Hour (60 mins). Options: 15, 30, 60, 120, 240
+    unitMinutes: 60, // Default 1 Hour (60 mins)
   };
 
-  let TIME_SLOTS = []; // Generated dynamically based on unitMinutes
+  let TIME_SLOTS = [];
   let isMouseDown = false;
   let editingLegendId = null;
 
@@ -55,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function generateTimeSlots(unitMins) {
     const slots = [];
     const totalSlots = Math.round(1440 / unitMins);
-    const startOffsetMins = 1320; // 10:00 PM = 22 * 60 = 1320 mins
+    const startOffsetMins = 1320; // 10:00 PM
 
     for (let i = 0; i < totalSlots; i++) {
       const startMins = (startOffsetMins + i * unitMins) % 1440;
@@ -78,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${hStr}:${mStr} ${ampm}`;
   }
 
-  // Helper: Format decimal hours nicely
   function formatHours(hrs) {
     if (hrs % 1 === 0) return hrs.toString();
     return hrs.toFixed(2).replace(/\.?0+$/, '');
@@ -104,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 5. State Persistence (LocalStorage)
+  // 5. State Persistence
   function saveStateToStorage() {
     try {
       localStorage.setItem('168h_planner_state', JSON.stringify({
@@ -140,26 +145,17 @@ document.addEventListener('DOMContentLoaded', () => {
     applyPreRenderedDefaults();
   }
 
-  /**
-   * Pre-rendered Defaults for ANY time block unit (15m, 30m, 60m, 120m, 240m)
-   */
   function applyPreRenderedDefaults() {
     state.grid = {};
     const unit = state.unitMinutes || 60;
     const totalSlots = Math.round(1440 / unit);
-    const startOffsetMins = 1320; // 10 PM
+    const startOffsetMins = 1320;
 
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       for (let slot = 0; slot < totalSlots; slot++) {
         const startMins = (startOffsetMins + slot * unit) % 1440;
-        
-        // 1. Sleep: 10 PM (1320) to 6 AM (360)
         const isSleep = (startMins >= 1320 && startMins < 1440) || (startMins >= 0 && startMins < 360);
-        
-        // 2. Routine Work: 6 AM - 8 AM (360-480) & 7 PM - 9 PM (1140-1260)
         const isRoutine = (startMins >= 360 && startMins < 480) || (startMins >= 1140 && startMins < 1260);
-
-        // 3. 9-to-5 Work: Sunday to Thursday (index 1 to 5), 9 AM - 5 PM (540-1020)
         const isWork = (dayIndex >= 1 && dayIndex <= 5) && (startMins >= 540 && startMins < 1020);
 
         const key = `${dayIndex}_${slot}`;
@@ -176,13 +172,11 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStateToStorage();
   }
 
-  // Change Time Block Unit (15m, 30m, 1h, 2h, 4h)
   function setTimeBlockUnit(newUnitMins) {
     state.unitMinutes = newUnitMins;
     TIME_SLOTS = generateTimeSlots(newUnitMins);
-    applyPreRenderedDefaults(); // Re-apply pre-rendered defaults for new slot resolution
+    applyPreRenderedDefaults();
 
-    // Update Unit Badge text
     const badge = document.getElementById('active-unit-badge');
     if (badge) {
       const labels = { 15: '15 Min Blocks', 30: '30 Min Blocks', 60: '1 Hour Blocks', 120: '2 Hour Blocks', 240: '4 Hour Blocks' };
@@ -195,7 +189,39 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStateToStorage();
   }
 
-  // 6. Render Functions
+  // 6. TOGGLE CELL ASSIGNMENT LOGIC (Select / Unselect)
+  function paintSlotKey(cellKey, forceAssign = false) {
+    const currentLegendId = state.grid[cellKey];
+
+    if (!forceAssign && currentLegendId === state.activeBrushId) {
+      // Box is ALREADY assigned to active legend -> TOGGLE UNSELECT!
+      delete state.grid[cellKey];
+    } else {
+      // Box is NOT assigned to active legend -> SELECT!
+      if (state.activeBrushId === 'eraser') {
+        delete state.grid[cellKey];
+      } else {
+        state.grid[cellKey] = state.activeBrushId;
+      }
+    }
+
+    saveStateToStorage();
+    renderGridTable();
+    renderSingleDayFeed();
+    updateStatistics();
+  }
+
+  function paintCell(tdCell, forceAssign = false) {
+    const key = tdCell.dataset.key;
+    if (!key) return;
+
+    paintSlotKey(key, forceAssign);
+
+    tdCell.classList.add('cell-painting');
+    setTimeout(() => tdCell.classList.remove('cell-painting'), 150);
+  }
+
+  // 7. Render Functions
 
   function renderLifePerspective() {
     const age = Math.max(1, Math.min(120, parseInt(state.userAge) || 28));
@@ -266,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Single Day Feed Render
+  // Single Day Feed Render with Daily Percentage Breakdown Stacked Bar
   function renderSingleDayFeed() {
     const dayHeading = document.getElementById('active-day-heading');
     if (!dayHeading) return;
@@ -277,19 +303,77 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalSlots = TIME_SLOTS.length;
     const hoursPerSlot = state.unitMinutes / 60;
 
+    // Calculate Daily Legend Hours & Percentages
+    const dayLegendSlotCounts = {};
+    state.legends.forEach(l => dayLegendSlotCounts[l.id] = 0);
     let dayAllocatedSlots = 0;
+
     for (let slot = 0; slot < totalSlots; slot++) {
       const key = `${state.activeDayIndex}_${slot}`;
-      if (state.grid[key] && state.legends.some(l => l.id === state.grid[key])) {
+      const legendId = state.grid[key];
+      if (legendId && dayLegendSlotCounts[legendId] !== undefined) {
+        dayLegendSlotCounts[legendId]++;
         dayAllocatedSlots++;
       }
     }
 
     const dayAllocatedHrs = dayAllocatedSlots * hoursPerSlot;
-    const dayUnallocatedHrs = 24 - dayAllocatedHrs;
+    const dayUnallocatedHrs = Math.max(0, 24 - dayAllocatedHrs);
+    const dayAllocatedPct = ((dayAllocatedHrs / 24) * 100).toFixed(1);
+    const dayUnallocatedPct = (100 - parseFloat(dayAllocatedPct)).toFixed(1);
 
     const subTitle = document.getElementById('active-day-subtitle');
-    if (subTitle) subTitle.textContent = `Allocated: ${formatHours(dayAllocatedHrs)} hrs • ${formatHours(dayUnallocatedHrs)} hrs Unallocated`;
+    if (subTitle) subTitle.textContent = `Allocated: ${formatHours(dayAllocatedHrs)} hrs (${dayAllocatedPct}%) • ${formatHours(dayUnallocatedHrs)} hrs Free (${dayUnallocatedPct}%)`;
+
+    const pctText = document.getElementById('daily-planned-pct-text');
+    if (pctText) pctText.textContent = `${dayAllocatedPct}% Allocated for ${dayName}`;
+
+    // Render Daily Stacked Progress Bar & Legend Pills
+    const stackedBar = document.getElementById('daily-stacked-progress-bar');
+    const pillsContainer = document.getElementById('daily-legend-pills');
+
+    if (stackedBar) stackedBar.innerHTML = '';
+    if (pillsContainer) pillsContainer.innerHTML = '';
+
+    state.legends.forEach(legend => {
+      const slots = dayLegendSlotCounts[legend.id] || 0;
+      if (slots > 0) {
+        const legendHrs = slots * hoursPerSlot;
+        const legendPct = ((legendHrs / 24) * 100).toFixed(1);
+
+        // Segment in stacked bar
+        if (stackedBar) {
+          const seg = document.createElement('div');
+          seg.style.width = `${legendPct}%`;
+          seg.style.backgroundColor = legend.color;
+          seg.title = `${legend.name}: ${formatHours(legendHrs)} hrs (${legendPct}% of ${dayName})`;
+          seg.className = 'h-full transition-all duration-300 border-r border-slate-900/40';
+          stackedBar.appendChild(seg);
+        }
+
+        // Pill badge
+        if (pillsContainer) {
+          const pill = document.createElement('span');
+          pill.className = 'flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700/80 rounded-lg text-slate-200 font-semibold';
+          pill.innerHTML = `
+            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${legend.color};"></span>
+            <span>${escapeHtml(legend.name)}: <strong>${formatHours(legendHrs)}h</strong> <span class="text-slate-400 font-normal">(${legendPct}%)</span></span>
+          `;
+          pillsContainer.appendChild(pill);
+        }
+      }
+    });
+
+    // Unallocated pill
+    if (dayUnallocatedHrs > 0 && pillsContainer) {
+      const freePill = document.createElement('span');
+      freePill.className = 'flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/60 border border-slate-700/50 rounded-lg text-slate-400 font-medium';
+      freePill.innerHTML = `
+        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-slate-600"></span>
+        <span>Free: <strong>${formatHours(dayUnallocatedHrs)}h</strong> (${dayUnallocatedPct}%)</span>
+      `;
+      pillsContainer.appendChild(freePill);
+    }
 
     // Day Navigation Tabs
     const navContainer = document.getElementById('day-tabs-nav');
@@ -297,13 +381,24 @@ document.addEventListener('DOMContentLoaded', () => {
       navContainer.innerHTML = '';
       DAYS.forEach((d, index) => {
         const isSelected = index === state.activeDayIndex;
+
+        let dSlots = 0;
+        for (let s = 0; s < totalSlots; s++) {
+          if (state.grid[`${index}_${s}`]) dSlots++;
+        }
+        const dHrs = dSlots * hoursPerSlot;
+        const dPct = ((dHrs / 24) * 100).toFixed(0);
+
         const tab = document.createElement('button');
-        tab.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+        tab.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
           isSelected
             ? 'bg-blue-600 text-white shadow-md'
             : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/60'
         }`;
-        tab.textContent = d.substring(0, 3);
+        tab.innerHTML = `
+          <span>${d.substring(0, 3)}</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded ${isSelected ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400'}">${dPct}%</span>
+        `;
         tab.addEventListener('click', () => {
           state.activeDayIndex = index;
           renderSingleDayFeed();
@@ -350,11 +445,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const statusLabel = document.createElement('div');
       statusLabel.className = 'text-[11px] font-medium truncate mt-0.5';
       if (legend) {
+        const lSlots = dayLegendSlotCounts[legend.id] || 0;
+        const lDayHrs = lSlots * hoursPerSlot;
+        const lDayPct = ((lDayHrs / 24) * 100).toFixed(1);
+
         statusLabel.style.color = legend.color;
-        statusLabel.textContent = `${legend.name} (${formatHours(hoursPerSlot)}h)`;
+        statusLabel.textContent = `${legend.name} (${formatHours(hoursPerSlot)}h block • ${lDayPct}% of ${dayName})`;
       } else {
         statusLabel.className = 'text-[11px] font-medium text-slate-500 italic';
-        statusLabel.textContent = `Unallocated (${formatHours(hoursPerSlot)}h block)`;
+        statusLabel.textContent = `Unallocated (${formatHours(hoursPerSlot)}h block • Tap to select/unselect)`;
       }
 
       textDiv.appendChild(timeLabel);
@@ -363,7 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
       leftDiv.appendChild(colorSwatch);
       leftDiv.appendChild(textDiv);
 
-      // Inline Quick Select Dropdown
       const select = document.createElement('select');
       select.className = 'px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-blue-500';
       
@@ -400,8 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       card.addEventListener('click', (e) => {
         if (e.target.tagName === 'SELECT') return;
-        paintSlotKey(cellKey);
-        renderSingleDayFeed();
+        paintSlotKey(cellKey); // Toggle select/unselect!
       });
 
       feedContainer.appendChild(card);
@@ -454,6 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chipsContainer.appendChild(eraserChip);
   }
 
+  // Render Legends Panel with DAILY & WEEKLY PERCENTAGES
   function renderLegends() {
     const container = document.getElementById('legends-list');
     const filterSelect = document.getElementById('filter-legend-select');
@@ -462,25 +560,45 @@ document.addEventListener('DOMContentLoaded', () => {
     container.innerHTML = '';
     
     const hoursPerSlot = state.unitMinutes / 60;
-    const legendSlotCounts = {};
-    state.legends.forEach(l => legendSlotCounts[l.id] = 0);
+    const weeklySlotCounts = {};
+    const activeDaySlotCounts = {};
+
+    state.legends.forEach(l => {
+      weeklySlotCounts[l.id] = 0;
+      activeDaySlotCounts[l.id] = 0;
+    });
     
-    Object.values(state.grid).forEach(legendId => {
-      if (legendSlotCounts[legendId] !== undefined) {
-        legendSlotCounts[legendId]++;
+    Object.keys(state.grid).forEach(key => {
+      const legendId = state.grid[key];
+      if (legendId && weeklySlotCounts[legendId] !== undefined) {
+        weeklySlotCounts[legendId]++;
+
+        // Check if key belongs to active day
+        const [dayIdx] = key.split('_').map(Number);
+        if (dayIdx === state.activeDayIndex) {
+          activeDaySlotCounts[legendId]++;
+        }
       }
     });
 
     filterSelect.innerHTML = '<option value="all">Show All Categories</option>';
 
+    const activeDayName = DAYS[state.activeDayIndex];
+
     state.legends.forEach(legend => {
       const isSelected = state.activeBrushId === legend.id;
-      const slotCount = legendSlotCounts[legend.id] || 0;
-      const allocatedHrs = slotCount * hoursPerSlot;
+      
+      const weeklySlots = weeklySlotCounts[legend.id] || 0;
+      const weeklyHrs = weeklySlots * hoursPerSlot;
+      const weeklyPct = ((weeklyHrs / 168) * 100).toFixed(1);
+
+      const daySlots = activeDaySlotCounts[legend.id] || 0;
+      const dayHrs = daySlots * hoursPerSlot;
+      const dayPct = ((dayHrs / 24) * 100).toFixed(1);
 
       const opt = document.createElement('option');
       opt.value = legend.id;
-      opt.textContent = `${legend.name} (${formatHours(allocatedHrs)}h)`;
+      opt.textContent = `${legend.name} (${formatHours(weeklyHrs)}h - ${weeklyPct}%)`;
       if (state.activeFilterId === legend.id) opt.selected = true;
       filterSelect.appendChild(opt);
 
@@ -492,25 +610,40 @@ document.addEventListener('DOMContentLoaded', () => {
       }`;
       
       card.innerHTML = `
-        <div class="flex items-center justify-between gap-2 mb-1.5">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-sm" style="background-color: ${legend.color};"></span>
-            <span class="font-bold text-xs text-white truncate">${escapeHtml(legend.name)}</span>
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-sm" style="background-color: ${legend.color};"></span>
+              <span class="font-bold text-xs text-white truncate">${escapeHtml(legend.name)}</span>
+            </div>
+            
+            <div class="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              <button class="btn-edit-legend p-1 text-slate-400 hover:text-white rounded hover:bg-slate-700/60" data-id="${legend.id}" title="Edit Name/Color">
+                <i data-lucide="edit-3" class="w-3 h-3"></i>
+              </button>
+              <button class="btn-delete-legend p-1 text-slate-400 hover:text-red-400 rounded hover:bg-slate-700/60" data-id="${legend.id}" title="Delete Legend">
+                <i data-lucide="trash" class="w-3 h-3"></i>
+              </button>
+            </div>
           </div>
-          
-          <div class="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-            <button class="btn-edit-legend p-1 text-slate-400 hover:text-white rounded hover:bg-slate-700/60" data-id="${legend.id}" title="Edit Name/Color">
-              <i data-lucide="edit-3" class="w-3 h-3"></i>
-            </button>
-            <button class="btn-delete-legend p-1 text-slate-400 hover:text-red-400 rounded hover:bg-slate-700/60" data-id="${legend.id}" title="Delete Legend">
-              <i data-lucide="trash" class="w-3 h-3"></i>
-            </button>
+
+          <!-- Weekly & Daily Percentage Breakdown -->
+          <div class="space-y-1 text-xs mt-1">
+            <div class="flex items-baseline justify-between text-[11px]">
+              <span class="text-slate-400">Weekly:</span>
+              <span class="font-bold text-slate-100">${formatHours(weeklyHrs)}h <span class="text-[10px] text-indigo-400 font-semibold">(${weeklyPct}%)</span></span>
+            </div>
+
+            <div class="flex items-baseline justify-between text-[10px] text-slate-400">
+              <span>${activeDayName.substring(0,3)}:</span>
+              <span class="font-semibold text-slate-300">${formatHours(dayHrs)}h <span class="text-emerald-400 font-semibold">(${dayPct}%)</span></span>
+            </div>
           </div>
         </div>
 
-        <div class="flex items-baseline justify-between text-xs">
-          <span class="text-slate-400 font-medium text-[11px]">Allocated:</span>
-          <span class="font-bold text-slate-100 text-xs">${formatHours(allocatedHrs)} <span class="text-[10px] font-normal text-slate-400">hrs</span></span>
+        <!-- Weekly Progress Bar -->
+        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden border border-slate-700 mt-2">
+          <div class="h-full rounded-full transition-all duration-300" style="width: ${weeklyPct}%; background-color: ${legend.color};"></div>
         </div>
       `;
 
@@ -525,6 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
       container.appendChild(card);
     });
 
+    // Eraser Card
     const isEraserSelected = state.activeBrushId === 'eraser';
     const eraserCard = document.createElement('div');
     eraserCard.className = `p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
@@ -533,11 +667,14 @@ document.addEventListener('DOMContentLoaded', () => {
         : 'bg-slate-900/60 hover:bg-slate-800 border-slate-700/60'
     }`;
     eraserCard.innerHTML = `
-      <div class="flex items-center gap-2 mb-1.5">
-        <span class="w-3.5 h-3.5 rounded-full bg-slate-600 flex-shrink-0"></span>
-        <span class="font-bold text-xs text-slate-300">Eraser</span>
+      <div>
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="w-3.5 h-3.5 rounded-full bg-slate-600 flex-shrink-0"></span>
+          <span class="font-bold text-xs text-slate-300">Eraser</span>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-1">Unselect / Clear</div>
       </div>
-      <div class="text-[11px] text-slate-500 text-right">Clear Cell</div>
+      <div class="text-[10px] text-slate-500 text-right mt-2">Tap box to clear</div>
     `;
     eraserCard.addEventListener('click', () => {
       state.activeBrushId = 'eraser';
@@ -556,6 +693,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const barSwatch = document.getElementById('brush-color-swatch');
     if (!barName || !barSwatch) return;
 
+    const hoursPerSlot = state.unitMinutes / 60;
+
     if (state.activeBrushId === 'eraser') {
       barName.textContent = 'Eraser / Unallocated';
       barSwatch.style.backgroundColor = '#475569';
@@ -564,16 +703,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const currentLegend = state.legends.find(l => l.id === state.activeBrushId);
     if (currentLegend) {
-      barName.textContent = currentLegend.name;
+      let weeklySlots = 0;
+      let daySlots = 0;
+      Object.keys(state.grid).forEach(key => {
+        if (state.grid[key] === currentLegend.id) {
+          weeklySlots++;
+          const [dIdx] = key.split('_').map(Number);
+          if (dIdx === state.activeDayIndex) daySlots++;
+        }
+      });
+
+      const weeklyHrs = weeklySlots * hoursPerSlot;
+      const weeklyPct = ((weeklyHrs / 168) * 100).toFixed(1);
+      const dayHrs = daySlots * hoursPerSlot;
+      const dayPct = ((dayHrs / 24) * 100).toFixed(1);
+
+      barName.innerHTML = `${escapeHtml(currentLegend.name)} — <span class="text-indigo-300 font-semibold">${formatHours(weeklyHrs)}h (${weeklyPct}% of wk)</span> • <span class="text-emerald-300 font-semibold">${formatHours(dayHrs)}h today (${dayPct}%)</span>`;
       barSwatch.style.backgroundColor = currentLegend.color;
     }
   }
 
-  // Render 168-Hour Schedule Matrix Grid Table
+  // Render 168-Hour Schedule Matrix Grid Table with Footer Daily Summary
   function renderGridTable() {
     const tbody = document.getElementById('grid-tbody');
+    const tfoot = document.getElementById('grid-tfoot');
     if (!tbody) return;
+
     tbody.innerHTML = '';
+    const hoursPerSlot = state.unitMinutes / 60;
 
     TIME_SLOTS.forEach((slotLabel, slotIndex) => {
       const tr = document.createElement('tr');
@@ -599,12 +756,26 @@ document.addEventListener('DOMContentLoaded', () => {
           td.style.backgroundColor = legend.color;
           td.style.color = '#ffffff';
           td.textContent = legend.name;
-          td.title = `${dayName} @ ${slotLabel}\nCategory: ${legend.name}`;
+
+          let daySlots = 0;
+          let weekSlots = 0;
+          Object.keys(state.grid).forEach(k => {
+            if (state.grid[k] === legend.id) {
+              weekSlots++;
+              if (parseInt(k.split('_')[0]) === dayIndex) daySlots++;
+            }
+          });
+          const dHrs = daySlots * hoursPerSlot;
+          const dPct = ((dHrs / 24) * 100).toFixed(1);
+          const wHrs = weekSlots * hoursPerSlot;
+          const wPct = ((wHrs / 168) * 100).toFixed(1);
+
+          td.title = `${dayName} @ ${slotLabel}\nCategory: ${legend.name}\nDay: ${formatHours(dHrs)} hrs (${dPct}% of ${dayName})\nWeek: ${formatHours(wHrs)} hrs (${wPct}% of week)\n(Click box to toggle select/unselect)`;
         } else {
           td.style.backgroundColor = 'transparent';
           td.style.color = '#64748b';
           td.textContent = '';
-          td.title = `${dayName} @ ${slotLabel}\nUnallocated`;
+          td.title = `${dayName} @ ${slotLabel}\nUnallocated (Click to assign active brush)`;
         }
 
         if (state.activeFilterId !== 'all') {
@@ -615,15 +786,16 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        td.addEventListener('mousedown', (e) => {
+        // Mouse click triggers toggle!
+        td.addEventListener('click', (e) => {
           e.preventDefault();
-          isMouseDown = true;
-          paintCell(td);
+          paintCell(td, false); // Toggle select/unselect!
         });
 
+        // Mouse drag forces active brush!
         td.addEventListener('mouseenter', () => {
           if (isMouseDown) {
-            paintCell(td);
+            paintCell(td, true);
           }
         });
 
@@ -632,47 +804,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
       tbody.appendChild(tr);
     });
-  }
 
-  function paintSlotKey(cellKey) {
-    if (state.activeBrushId === 'eraser') {
-      delete state.grid[cellKey];
-    } else {
-      state.grid[cellKey] = state.activeBrushId;
-    }
-    saveStateToStorage();
-    renderGridTable();
-    updateStatistics();
-  }
+    // Render Table Footer Daily Breakdown Summary Row
+    if (tfoot) {
+      tfoot.innerHTML = '';
+      const trFoot = document.createElement('tr');
 
-  function paintCell(tdCell) {
-    const key = tdCell.dataset.key;
-    if (!key) return;
+      const tdLabel = document.createElement('td');
+      tdLabel.className = 'p-3 text-center bg-slate-850 font-bold text-slate-300 text-xs border-r border-slate-700/80';
+      tdLabel.innerHTML = 'Daily Total <br/><span class="text-[10px] text-slate-400 font-normal">% of Day</span>';
+      trFoot.appendChild(tdLabel);
 
-    paintSlotKey(key);
+      DAYS.forEach((dName, dIdx) => {
+        let daySlots = 0;
+        const totalSlots = TIME_SLOTS.length;
+        for (let s = 0; s < totalSlots; s++) {
+          if (state.grid[`${dIdx}_${s}`]) daySlots++;
+        }
+        const dHrs = daySlots * hoursPerSlot;
+        const dPct = ((dHrs / 24) * 100).toFixed(1);
 
-    const legendId = state.grid[key];
-    const legend = state.legends.find(l => l.id === legendId);
-    const dayName = DAYS[tdCell.dataset.dayIndex];
-    const slotLabel = TIME_SLOTS[tdCell.dataset.slotIndex];
+        const tdDaySum = document.createElement('td');
+        tdDaySum.className = 'p-2 text-center border-r border-slate-700/60 bg-slate-800/80';
+        tdDaySum.innerHTML = `
+          <div class="text-xs font-bold text-white">${formatHours(dHrs)}h</div>
+          <div class="text-[10px] font-semibold text-emerald-400">${dPct}%</div>
+          <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden mt-1 border border-slate-700">
+            <div class="bg-gradient-to-r from-blue-500 to-emerald-500 h-full" style="width: ${dPct}%;"></div>
+          </div>
+        `;
+        trFoot.appendChild(tdDaySum);
+      });
 
-    if (legend) {
-      tdCell.style.backgroundColor = legend.color;
-      tdCell.style.color = '#ffffff';
-      tdCell.textContent = legend.name;
-      tdCell.title = `${dayName} @ ${slotLabel}\nCategory: ${legend.name}`;
-    } else {
-      tdCell.style.backgroundColor = 'transparent';
-      tdCell.style.color = '#64748b';
-      tdCell.textContent = '';
-      tdCell.title = `${dayName} @ ${slotLabel}\nUnallocated`;
-    }
-
-    tdCell.classList.add('cell-painting');
-    setTimeout(() => tdCell.classList.remove('cell-painting'), 150);
-
-    if (state.viewMode === 'day') {
-      renderSingleDayFeed();
+      tfoot.appendChild(trFoot);
     }
   }
 
@@ -726,13 +890,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 7. Bind Event Listeners
+  // 8. Bind Event Listeners
   function bindEvents() {
+    window.addEventListener('mousedown', () => {
+      isMouseDown = true;
+    });
+
     window.addEventListener('mouseup', () => {
       isMouseDown = false;
     });
 
-    // Time Block Unit Selector Change
     const blockSelect = document.getElementById('select-block-unit');
     if (blockSelect) {
       blockSelect.value = state.unitMinutes.toString();
@@ -742,7 +909,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // View Mode Tab Switching
     const tabBtnDay = document.getElementById('tab-btn-day');
     if (tabBtnDay) {
       tabBtnDay.addEventListener('click', () => {
@@ -761,12 +927,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Single Day Navigation Prev/Next
     const btnPrev = document.getElementById('btn-prev-day');
     if (btnPrev) {
       btnPrev.addEventListener('click', () => {
         state.activeDayIndex = (state.activeDayIndex - 1 + 7) % 7;
         renderSingleDayFeed();
+        renderLegends();
       });
     }
 
@@ -775,10 +941,10 @@ document.addEventListener('DOMContentLoaded', () => {
       btnNext.addEventListener('click', () => {
         state.activeDayIndex = (state.activeDayIndex + 1) % 7;
         renderSingleDayFeed();
+        renderLegends();
       });
     }
 
-    // Dynamic Age Input Listeners
     const ageInput = document.getElementById('user-age-input');
     if (ageInput) {
       const handleAgeChange = (e) => {
@@ -795,7 +961,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ageInput.addEventListener('keyup', handleAgeChange);
     }
 
-    // Filter Select
     const filterSelect = document.getElementById('filter-legend-select');
     if (filterSelect) {
       filterSelect.addEventListener('change', (e) => {
@@ -805,7 +970,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Export Word Button
     const btnWord = document.getElementById('btn-export-word');
     if (btnWord) {
       btnWord.addEventListener('click', () => {
@@ -822,7 +986,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Reset Defaults Button
     const btnReset = document.getElementById('btn-reset-defaults');
     if (btnReset) {
       btnReset.addEventListener('click', () => {
@@ -835,7 +998,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Clear All Grid Button
     const btnClear = document.getElementById('btn-clear-all');
     if (btnClear) {
       btnClear.addEventListener('click', () => {
@@ -849,7 +1011,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Add Legend Modal Trigger
     const btnAddLegend = document.getElementById('btn-add-legend');
     if (btnAddLegend) {
       btnAddLegend.addEventListener('click', () => {
