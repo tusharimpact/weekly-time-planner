@@ -329,20 +329,22 @@
           <p id="matrix-subtitle" class="text-xs text-slate-400 mt-0.5">Saturday to Friday • 10:00 PM (Night) to 9:00 PM (24 Hours)</p>
         </div>
 
-        <div class="flex items-center gap-2 text-xs text-slate-400">
-          <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg">
+        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+          <!-- Split Icons Toggle Button -->
+          <button id="btn-toggle-split-mode" title="Show or hide cell gear icons for a cleaner view" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition shadow-sm active:scale-95">
+            <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>Split Icons: <strong id="split-mode-status" class="text-slate-400">OFF</strong></span>
+          </button>
+
+          <span class="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-xl">
             <span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
             Unallocated
-          </span>
-          <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg">
-            <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-400"></i>
-            Click cell gear icon to split into 15m/30m
           </span>
         </div>
       </div>
 
-      <!-- Scrollable Grid Container with Table Footer Daily Summary -->
-      <div class="overflow-x-auto rounded-xl border border-slate-700/80 bg-slate-900/90 shadow-inner">
+      <!-- Scrollable Grid Container with Sticky Frozen Days & Sticky Time Column -->
+      <div class="grid-table-container overflow-auto max-h-[72vh] rounded-xl border border-slate-700/80 bg-slate-900/90 shadow-inner relative">
         <table id="schedule-grid-table" class="w-full border-collapse text-left min-w-[850px] select-none">
           <thead>
             <tr class="bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider border-b border-slate-700">

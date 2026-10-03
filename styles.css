@@ -60,26 +60,77 @@ body {
   filter: grayscale(0.7);
 }
 
-/* Cell Split Action Gear/Slider Button */
+/* Cell Split Action Gear/Slider Button (Controlled by Split Mode toggle) */
 .cell-split-trigger {
+  display: none;
   position: absolute;
   top: 2px;
   right: 2px;
-  opacity: 0.45;
+  opacity: 0.85;
   transition: opacity 0.15s ease, transform 0.15s ease;
   z-index: 25;
+}
+
+#schedule-grid-table.show-split-triggers .cell-split-trigger {
+  display: block;
 }
 
 .cell-slot:hover .cell-split-trigger,
 .cell-split-trigger:hover {
   opacity: 1;
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
-@media (pointer: coarse) {
-  .cell-split-trigger {
-    opacity: 0.85;
-  }
+/* Table Freeze Panes (Sticky Days Header & Sticky Time Column) */
+.grid-table-container {
+  overflow: auto;
+  max-height: 72vh;
+}
+
+#schedule-grid-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* 1. Sticky Days Top Header Row */
+#schedule-grid-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background-color: #1e293b !important; /* bg-slate-800 solid background */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* 2. Sticky Left Time Column */
+#schedule-grid-table .time-slot-label {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background-color: #0f172a !important; /* bg-slate-900 solid background */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+}
+
+/* 3. Sticky Top-Left Corner (Intersection of Days and Time Slot Header) */
+#schedule-grid-table thead th:first-child {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 40 !important;
+  background-color: #1e293b !important;
+}
+
+/* 4. Sticky Bottom Summary Footer Row */
+#schedule-grid-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  background-color: #1e293b !important;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+}
+
+#schedule-grid-table tfoot td:first-child {
+  left: 0;
+  z-index: 40 !important;
 }
 
 /* Sub-slot Sub-blocks Inside Cell */

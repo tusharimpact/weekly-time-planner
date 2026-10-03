@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     activeFilterId: 'all',
     viewMode: isMobileInitial ? 'day' : 'grid',
     activeDayIndex: 0, // 0 = Saturday
+    splitModeEnabled: false, // Default OFF for ultra-clean schedule view!
   };
 
   let isMouseDown = false;
@@ -102,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderGridTable();
     renderMobileStickyToolbar();
     updateStatistics();
+    updateSplitModeUI();
     bindEvents();
 
     if (window.lucide) {
@@ -115,7 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('168h_planner_state', JSON.stringify({
         legends: state.legends,
         grid: state.grid,
-        userAge: state.userAge
+        userAge: state.userAge,
+        splitModeEnabled: state.splitModeEnabled
       }));
     } catch (e) {
       console.error('Failed to save state to localStorage', e);
@@ -136,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (parsed.grid) state.grid = parsed.grid;
         if (parsed.userAge !== undefined) state.userAge = parsed.userAge;
+        if (parsed.splitModeEnabled !== undefined) state.splitModeEnabled = parsed.splitModeEnabled;
 
         if (!state.legends.find(l => l.id === state.activeBrushId)) {
           state.activeBrushId = state.legends[0].id;
@@ -886,11 +890,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Render Uniform 24-Hour Schedule Matrix Grid Table (With Sub-slot In-cell Breakdown)
+  function updateSplitModeUI() {
+    const btn = document.getElementById('btn-toggle-split-mode');
+    const statusText = document.getElementById('split-mode-status');
+    const table = document.getElementById('schedule-grid-table');
+
+    if (statusText) {
+      if (state.splitModeEnabled) {
+        statusText.textContent = 'ON';
+        statusText.className = 'text-emerald-400 font-bold';
+        if (btn) btn.className = 'flex items-center gap-1.5 px-3 py-1.5 bg-indigo-950/80 hover:bg-indigo-900 border border-emerald-500/60 text-white rounded-xl text-xs font-semibold transition shadow-md ring-1 ring-emerald-500/40 active:scale-95';
+      } else {
+        statusText.textContent = 'OFF';
+        statusText.className = 'text-slate-400 font-semibold';
+        if (btn) btn.className = 'flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition shadow-sm active:scale-95';
+      }
+    }
+
+    if (table) {
+      if (state.splitModeEnabled) {
+        table.classList.add('show-split-triggers');
+      } else {
+        table.classList.remove('show-split-triggers');
+      }
+    }
+  }
+
+  // Render Uniform 24-Hour Schedule Matrix Grid Table (With Sub-slot In-cell Breakdown & Frozen Header/Column)
   function renderGridTable() {
     const tbody = document.getElementById('grid-tbody');
     const tfoot = document.getElementById('grid-tfoot');
     if (!tbody) return;
+
+    updateSplitModeUI();
 
     tbody.innerHTML = '';
 
@@ -1151,6 +1183,15 @@ document.addEventListener('DOMContentLoaded', () => {
         state.viewMode = 'grid';
         renderViewModeToggle();
         renderGridTable();
+      });
+    }
+
+    const btnToggleSplit = document.getElementById('btn-toggle-split-mode');
+    if (btnToggleSplit) {
+      btnToggleSplit.addEventListener('click', () => {
+        state.splitModeEnabled = !state.splitModeEnabled;
+        saveStateToStorage();
+        updateSplitModeUI();
       });
     }
 
