@@ -39,7 +39,9 @@ body {
   transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
   user-select: none;
   cursor: pointer;
-  min-height: 42px;
+  min-height: 48px;
+  height: 48px;
+  padding: 0 !important;
 }
 
 .cell-slot:hover {
@@ -56,6 +58,29 @@ body {
 .cell-slot.cell-dimmed {
   opacity: 0.25;
   filter: grayscale(0.7);
+}
+
+/* Cell Split Action Gear Button */
+.cell-split-trigger {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 20;
+}
+
+.cell-slot:hover .cell-split-trigger {
+  opacity: 1;
+}
+
+/* Sub-slot Sub-blocks Inside Cell */
+.sub-slot-bar {
+  transition: filter 0.12s ease, transform 0.1s ease;
+}
+.sub-slot-bar:hover {
+  filter: brightness(1.25);
+  z-index: 15;
 }
 
 /* Single Day Feed Slot Card */
@@ -82,11 +107,11 @@ body {
 }
 
 /* Modal animation support */
-#modal-legend.active {
+#modal-legend.active, #modal-cell-split.active {
   opacity: 1;
   pointer-events: auto;
 }
-#modal-legend.active > div {
+#modal-legend.active > div, #modal-cell-split.active > div {
   transform: scale(1);
 }
 

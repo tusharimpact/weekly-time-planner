@@ -1,6 +1,6 @@
 /**
  * Word Exporter (.docx) for 168 Hours Weekly Life & Time Planner
- * Supports customizable time block units (15m, 30m, 1h, 2h, 4h)
+ * Supports Legend Notes and In-cell Sub-hour Slot Breakdowns (15m, 30m, 1h)
  */
 
 window.DocxExporter = {
@@ -34,47 +34,41 @@ window.DocxExporter = {
   async generateNativeDocx(state, getContrastTextColor) {
     const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } = window.docx;
 
-    const unitMins = state.unitMinutes || 60;
-    const hoursPerSlot = unitMins / 60;
-
     const formatHours = (hrs) => {
       if (hrs % 1 === 0) return hrs.toString();
       return hrs.toFixed(2).replace(/\.?0+$/, '');
     };
 
-    const legendSlotCounts = {};
-    state.legends.forEach(l => legendSlotCounts[l.id] = 0);
-    let unallocatedSlotCount = 0;
+    // Calculate Legend Hours
+    const legendHrsMap = {};
+    state.legends.forEach(l => legendHrsMap[l.id] = 0);
+    let totalAllocatedHrs = 0;
 
-    const totalSlots = state.slots.length;
-
-    const dailyAgendas = state.days.map((dayName, dayIndex) => {
-      const items = [];
-      state.slots.forEach((slotLabel, slotIndex) => {
-        const key = `${dayIndex}_${slotIndex}`;
-        const legendId = state.grid[key];
-        const legend = state.legends.find(l => l.id === legendId);
-        items.push({
-          slotIndex,
-          timeSlot: slotLabel,
-          legendId: legendId || 'unallocated',
-          legendName: legend ? legend.name : 'Unallocated Time',
-          color: legend ? legend.color : '#64748b'
+    Object.keys(state.grid).forEach(key => {
+      const val = state.grid[key];
+      if (typeof val === 'string' && legendHrsMap[val] !== undefined) {
+        legendHrsMap[val] += 1.0;
+        totalAllocatedHrs += 1.0;
+      } else if (val && typeof val === 'object' && val.split) {
+        const hPerSub = 1.0 / val.split;
+        val.sub.forEach(sub => {
+          if (sub && legendHrsMap[sub] !== undefined) {
+            legendHrsMap[sub] += hPerSub;
+            totalAllocatedHrs += hPerSub;
+          }
         });
-
-        if (legendId && legendSlotCounts[legendId] !== undefined) {
-          legendSlotCounts[legendId]++;
-        } else {
-          unallocatedSlotCount++;
-        }
-      });
-      return { dayName, dayIndex, items };
+      }
     });
 
-    const unallocatedHrs = unallocatedSlotCount * hoursPerSlot;
+    const unallocatedHrs = Math.max(0, 168 - totalAllocatedHrs);
     const age = state.userAge || 28;
     const weeksLived = Math.round(age * 52.1429);
+    const daysLived = Math.round(weeksLived * 7);
+    const hoursLived = Math.round(daysLived * 24);
+
     const weeksRemaining = Math.max(0, 4000 - weeksLived);
+    const daysRemaining = Math.round(weeksRemaining * 7);
+    const hoursRemaining = Math.round(weeksRemaining * 168);
 
     const docChildren = [
       new Paragraph({
@@ -95,9 +89,9 @@ window.DocxExporter = {
         spacing: { after: 300 },
         children: [
           new TextRun({
-            text: `Human Life Perspective: ~4,000 Weeks (~76.9 Years) | Age: ${age} | Weeks Lived: ${weeksLived.toLocaleString()} | Weeks Remaining: ${weeksRemaining.toLocaleString()} | Time Block Unit: ${unitMins} Mins`,
+            text: `Human Life Perspective: ~4,000 Weeks (~76.9 Years) | Age: ${age} | Lived: ${weeksLived.toLocaleString()} wks (${daysLived.toLocaleString()} days) | Remaining: ${weeksRemaining.toLocaleString()} wks (${daysRemaining.toLocaleString()} days • ${hoursRemaining.toLocaleString()} hrs)`,
             italic: true,
-            size: 20,
+            size: 18,
             color: "475569"
           })
         ]
@@ -106,7 +100,7 @@ window.DocxExporter = {
       new Paragraph({
         spacing: { before: 200, after: 120 },
         children: [
-          new TextRun({ text: "1. Weekly Allocation Summary (Total 168 Hours)", bold: true, size: 24, color: "0F172A" })
+          new TextRun({ text: "1. Weekly Category Allocation & Notes Summary (Total 168 Hours)", bold: true, size: 24, color: "0F172A" })
         ]
       })
     ];
@@ -117,21 +111,20 @@ window.DocxExporter = {
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Category / Legend", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Allocated Hours", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "% of Week", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Block Count", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Category Goals & Notes", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
         ]
       })
     ];
 
     state.legends.forEach(l => {
-      const slotCount = legendSlotCounts[l.id] || 0;
-      const hours = slotCount * hoursPerSlot;
-      const pct = ((hours / 168) * 100).toFixed(1);
+      const hrs = legendHrsMap[l.id] || 0;
+      const pct = ((hrs / 168) * 100).toFixed(1);
       summaryRows.push(new TableRow({
         children: [
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: l.name, bold: true, color: l.color.replace('#', '') })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${formatHours(hours)} hrs` })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${formatHours(hrs)} hrs` })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${pct}%` })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${slotCount} blocks` })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: l.notes || "No notes set.", italic: !l.notes })] })] }),
         ]
       }));
     });
@@ -142,7 +135,7 @@ window.DocxExporter = {
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Unallocated Time", bold: true, color: "64748B" })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${formatHours(unallocatedHrs)} hrs` })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${unallocatedPct}%` })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${unallocatedSlotCount} blocks` })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Free time buffer", italic: true })] })] }),
       ]
     }));
 
@@ -151,7 +144,7 @@ window.DocxExporter = {
       rows: summaryRows
     }));
 
-    // Section 2: Detailed Day-by-Day Agenda
+    // Section 2: Day-by-Day Detailed Task Agenda
     docChildren.push(new Paragraph({
       spacing: { before: 400, after: 120 },
       children: [
@@ -159,34 +152,13 @@ window.DocxExporter = {
       ]
     }));
 
-    dailyAgendas.forEach(dayAgenda => {
+    state.days.forEach((dayName, dayIndex) => {
       docChildren.push(new Paragraph({
         spacing: { before: 200, after: 80 },
         children: [
-          new TextRun({ text: `• ${dayAgenda.dayName}`, bold: true, size: 20, color: "1E3A8A" })
+          new TextRun({ text: `• ${dayName}`, bold: true, size: 20, color: "1E3A8A" })
         ]
       }));
-
-      const blocks = [];
-      let currentBlock = null;
-
-      dayAgenda.items.forEach(item => {
-        if (!currentBlock || currentBlock.legendId !== item.legendId) {
-          if (currentBlock) blocks.push(currentBlock);
-          currentBlock = {
-            legendId: item.legendId,
-            legendName: item.legendName,
-            color: item.color,
-            startSlot: item.timeSlot.split(' - ')[0],
-            endSlot: item.timeSlot.split(' - ')[1],
-            slotCount: 1
-          };
-        } else {
-          currentBlock.endSlot = item.timeSlot.split(' - ')[1];
-          currentBlock.slotCount++;
-        }
-      });
-      if (currentBlock) blocks.push(currentBlock);
 
       const dayRows = [
         new TableRow({
@@ -198,18 +170,38 @@ window.DocxExporter = {
         })
       ];
 
-      blocks.forEach(b => {
-        const durationHrs = b.slotCount * hoursPerSlot;
-        dayRows.push(new TableRow({
-          children: [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${b.startSlot} - ${b.endSlot}`, size: 14, bold: true })] })] }),
-            new TableCell({
-              children: [new Paragraph({ children: [new TextRun({ text: b.legendName, size: 14, bold: true, color: b.color.replace('#', '') })] })],
-              shading: { fill: b.legendId !== 'unallocated' ? "F8FAFC" : "FFFFFF" }
-            }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${formatHours(durationHrs)} hrs`, size: 14 })] })] }),
-          ]
-        }));
+      state.slots.forEach((slotLabel, slotIndex) => {
+        const key = `${dayIndex}_${slotIndex}`;
+        const val = state.grid[key];
+
+        if (val && typeof val === 'object' && val.split) {
+          const subMins = 60 / val.split;
+          val.sub.forEach((subLegId, subIdx) => {
+            const subLegend = state.legends.find(l => l.id === subLegId);
+            const text = subLegend ? subLegend.name : "Unallocated";
+            const color = subLegend ? subLegend.color.replace('#', '') : "64748B";
+
+            dayRows.push(new TableRow({
+              children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${slotLabel} (Sub-block ${subIdx+1}/${val.split})`, size: 13, bold: true })] })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: text, size: 13, bold: !!subLegend, color: color })] })], shading: { fill: subLegend ? "F8FAFC" : "FFFFFF" } }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${subMins} mins`, size: 13 })] })] }),
+              ]
+            }));
+          });
+        } else {
+          const legend = state.legends.find(l => l.id === val);
+          const text = legend ? legend.name : "Unallocated Time";
+          const color = legend ? legend.color.replace('#', '') : "64748B";
+
+          dayRows.push(new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: slotLabel, size: 14, bold: true })] })] }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: text, size: 14, bold: !!legend, color: color })] })], shading: { fill: legend ? "F8FAFC" : "FFFFFF" } }),
+              new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "1.0 hr", size: 14 })] })] }),
+            ]
+          }));
+        }
       });
 
       docChildren.push(new Table({
@@ -218,11 +210,11 @@ window.DocxExporter = {
       }));
     });
 
-    // Section 3: Visual Schedule Matrix
+    // Section 3: Full Weekly 168-Hour Schedule Matrix Table
     docChildren.push(new Paragraph({
       spacing: { before: 400, after: 120 },
       children: [
-        new TextRun({ text: `3. Full Weekly Schedule Matrix (${unitMins} Min Blocks)`, bold: true, size: 24, color: "0F172A" })
+        new TextRun({ text: "3. Full Weekly 168-Hour Schedule Matrix (Saturday to Friday)", bold: true, size: 24, color: "0F172A" })
       ]
     }));
 
@@ -241,17 +233,29 @@ window.DocxExporter = {
 
       state.days.forEach((dayName, dayIndex) => {
         const key = `${dayIndex}_${slotIndex}`;
-        const legendId = state.grid[key];
-        const legend = state.legends.find(l => l.id === legendId);
+        const val = state.grid[key];
 
-        const cellText = legend ? legend.name : "Free";
-        const cellHex = legend ? legend.color.replace('#', '') : "FFFFFF";
-        const textColor = legend ? getContrastTextColor(legend.color) : "94A3B8";
+        if (val && typeof val === 'object' && val.split) {
+          const names = val.sub.map(s => {
+            const leg = state.legends.find(l => l.id === s);
+            return leg ? leg.name : 'Free';
+          }).join(' | ');
 
-        rowCells.push(new TableCell({
-          children: [new Paragraph({ children: [new TextRun({ text: cellText, size: 12, bold: !!legend, color: textColor })] })],
-          shading: { fill: cellHex }
-        }));
+          rowCells.push(new TableCell({
+            children: [new Paragraph({ children: [new TextRun({ text: `[Split ${val.split}] ${names}`, size: 11, bold: true, color: "1E3A8A" })] })],
+            shading: { fill: "EEF2FF" }
+          }));
+        } else {
+          const legend = state.legends.find(l => l.id === val);
+          const cellText = legend ? legend.name : "Free";
+          const cellHex = legend ? legend.color.replace('#', '') : "FFFFFF";
+          const textColor = legend ? getContrastTextColor(legend.color) : "94A3B8";
+
+          rowCells.push(new TableCell({
+            children: [new Paragraph({ children: [new TextRun({ text: cellText, size: 12, bold: !!legend, color: textColor })] })],
+            shading: { fill: cellHex }
+          }));
+        }
       });
 
       matrixRows.push(new TableRow({ children: rowCells }));
@@ -286,56 +290,50 @@ window.DocxExporter = {
   },
 
   generateWordHtmlDoc(state, getContrastTextColor) {
-    const unitMins = state.unitMinutes || 60;
-    const hoursPerSlot = unitMins / 60;
-
     const formatHours = (hrs) => {
       if (hrs % 1 === 0) return hrs.toString();
       return hrs.toFixed(2).replace(/\.?0+$/, '');
     };
 
-    const legendSlotCounts = {};
-    state.legends.forEach(l => legendSlotCounts[l.id] = 0);
-    let unallocatedSlotCount = 0;
+    const legendHrsMap = {};
+    state.legends.forEach(l => legendHrsMap[l.id] = 0);
+    let totalAllocatedHrs = 0;
 
-    const dailyAgendas = state.days.map((dayName, dayIndex) => {
-      const items = [];
-      state.slots.forEach((slotLabel, slotIndex) => {
-        const key = `${dayIndex}_${slotIndex}`;
-        const legendId = state.grid[key];
-        const legend = state.legends.find(l => l.id === legendId);
-        items.push({
-          slotIndex,
-          timeSlot: slotLabel,
-          legendId: legendId || 'unallocated',
-          legendName: legend ? legend.name : 'Unallocated Time',
-          color: legend ? legend.color : '#64748b'
+    Object.keys(state.grid).forEach(key => {
+      const val = state.grid[key];
+      if (typeof val === 'string' && legendHrsMap[val] !== undefined) {
+        legendHrsMap[val] += 1.0;
+        totalAllocatedHrs += 1.0;
+      } else if (val && typeof val === 'object' && val.split) {
+        const hPerSub = 1.0 / val.split;
+        val.sub.forEach(sub => {
+          if (sub && legendHrsMap[sub] !== undefined) {
+            legendHrsMap[sub] += hPerSub;
+            totalAllocatedHrs += hPerSub;
+          }
         });
-
-        if (legendId && legendSlotCounts[legendId] !== undefined) {
-          legendSlotCounts[legendId]++;
-        } else {
-          unallocatedSlotCount++;
-        }
-      });
-      return { dayName, dayIndex, items };
+      }
     });
 
-    const unallocatedHrs = unallocatedSlotCount * hoursPerSlot;
+    const unallocatedHrs = Math.max(0, 168 - totalAllocatedHrs);
     const age = state.userAge || 28;
     const weeksLived = Math.round(age * 52.1429);
+    const daysLived = Math.round(weeksLived * 7);
+    const hoursLived = Math.round(daysLived * 24);
+
     const weeksRemaining = Math.max(0, 4000 - weeksLived);
+    const daysRemaining = Math.round(weeksRemaining * 7);
+    const hoursRemaining = Math.round(weeksRemaining * 168);
 
     let legendRowsHtml = state.legends.map(l => {
-      const slotCount = legendSlotCounts[l.id] || 0;
-      const hrs = slotCount * hoursPerSlot;
+      const hrs = legendHrsMap[l.id] || 0;
       const pct = ((hrs / 168) * 100).toFixed(1);
       return `
         <tr>
           <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; color: ${l.color};">${l.name}</td>
           <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatHours(hrs)} hrs</td>
           <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${pct}%</td>
-          <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569;">${slotCount} blocks (${unitMins}m each)</td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569;">${l.notes || 'No notes set.'}</td>
         </tr>
       `;
     }).join('');
@@ -346,84 +344,9 @@ window.DocxExporter = {
         <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #64748b;">Unallocated Time</td>
         <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatHours(unallocatedHrs)} hrs</td>
         <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${unallocatedPct}%</td>
-        <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569;">${unallocatedSlotCount} free blocks</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569;">Free buffer time</td>
       </tr>
     `;
-
-    let dailyAgendaHtml = dailyAgendas.map(dayAgenda => {
-      const blocks = [];
-      let currentBlock = null;
-
-      dayAgenda.items.forEach(item => {
-        if (!currentBlock || currentBlock.legendId !== item.legendId) {
-          if (currentBlock) blocks.push(currentBlock);
-          currentBlock = {
-            legendId: item.legendId,
-            legendName: item.legendName,
-            color: item.color,
-            startSlot: item.timeSlot.split(' - ')[0],
-            endSlot: item.timeSlot.split(' - ')[1],
-            slotCount: 1
-          };
-        } else {
-          currentBlock.endSlot = item.timeSlot.split(' - ')[1];
-          currentBlock.slotCount++;
-        }
-      });
-      if (currentBlock) blocks.push(currentBlock);
-
-      const blockRows = blocks.map(b => {
-        const durationHrs = b.slotCount * hoursPerSlot;
-        return `
-          <tr>
-            <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold; font-size: 11px; text-align: center;">${b.startSlot} - ${b.endSlot}</td>
-            <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold; font-size: 11px; color: ${b.color};">${b.legendName}</td>
-            <td style="padding: 6px; border: 1px solid #cbd5e1; font-size: 11px; text-align: center;">${formatHours(durationHrs)} hrs</td>
-          </tr>
-        `;
-      }).join('');
-
-      return `
-        <div style="margin-top: 15px; margin-bottom: 20px;">
-          <h3 style="color: #1e3a8a; margin-bottom: 8px; font-size: 14px;">• ${dayAgenda.dayName} Agenda</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background-color: #f1f5f9; font-size: 11px;">
-                <th style="padding: 6px; border: 1px solid #cbd5e1; width: 30%;">Time Window</th>
-                <th style="padding: 6px; border: 1px solid #cbd5e1; width: 50%;">Allocated Activity / Task</th>
-                <th style="padding: 6px; border: 1px solid #cbd5e1; width: 20%;">Duration</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${blockRows}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }).join('');
-
-    let gridHeaderHtml = state.days.map(d => `<th style="padding: 6px; border: 1px solid #94a3b8; background-color: #1e293b; color: white; font-size: 11px;">${d}</th>`).join('');
-
-    let gridRowsHtml = state.slots.map((slotLabel, slotIndex) => {
-      let cellsHtml = state.days.map((d, dayIndex) => {
-        const key = `${dayIndex}_${slotIndex}`;
-        const legendId = state.grid[key];
-        const legend = state.legends.find(l => l.id === legendId);
-
-        const text = legend ? legend.name : '';
-        const bg = legend ? legend.color : '#ffffff';
-        const color = legend ? '#' + getContrastTextColor(legend.color) : '#94a3b8';
-
-        return `<td style="padding: 4px; border: 1px solid #cbd5e1; background-color: ${bg}; color: ${color}; font-size: 10px; font-weight: bold; text-align: center;">${text}</td>`;
-      }).join('');
-
-      return `
-        <tr>
-          <td style="padding: 4px; border: 1px solid #94a3b8; background-color: #f1f5f9; font-weight: bold; font-size: 10px; text-align: center;">${slotLabel}</td>
-          ${cellsHtml}
-        </tr>
-      `;
-    }).join('');
 
     const htmlString = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -441,17 +364,17 @@ window.DocxExporter = {
       <body>
         <h1>MY WEEKLY 168-HOUR TIME & TASK PLAN</h1>
         <div class="subtitle">
-          Human Life Perspective: ~4,000 Weeks (~76.9 Years) | Age: ${age} | Weeks Lived: ${weeksLived.toLocaleString()} | Weeks Remaining: ${weeksRemaining.toLocaleString()} | Time Block Unit: ${unitMins} Mins
+          Human Life Perspective: ~4,000 Weeks (~76.9 Years) | Age: ${age} | Lived: ${weeksLived.toLocaleString()} wks (${daysLived.toLocaleString()} days) | Remaining: ${weeksRemaining.toLocaleString()} wks (${daysRemaining.toLocaleString()} days • ${hoursRemaining.toLocaleString()} hrs)
         </div>
 
-        <div class="section-title">1. Weekly Category Allocation (168 Hours Total)</div>
+        <div class="section-title">1. Weekly Category Allocation & Notes Summary (Total 168 Hours)</div>
         <table>
           <thead>
             <tr style="background-color: #e2e8f0; font-size: 12px;">
               <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Category / Legend</th>
               <th style="padding: 8px; border: 1px solid #cbd5e1;">Allocated Hours</th>
               <th style="padding: 8px; border: 1px solid #cbd5e1;">% of Week</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1;">Block Details</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1;">Category Goals & Notes</th>
             </tr>
           </thead>
           <tbody>
@@ -459,23 +382,7 @@ window.DocxExporter = {
           </tbody>
         </table>
 
-        <div class="section-title">2. Detailed Day-by-Day Task Agenda (Saturday to Friday)</div>
-        ${dailyAgendaHtml}
-
-        <div class="section-title">3. Full 7-Day × 24-Hour Schedule Matrix (${unitMins} Min Blocks)</div>
-        <table>
-          <thead>
-            <tr>
-              <th style="padding: 6px; border: 1px solid #94a3b8; background-color: #1e293b; color: white; font-size: 11px;">Time Slot</th>
-              ${gridHeaderHtml}
-            </tr>
-          </thead>
-          <tbody>
-            ${gridRowsHtml}
-          </tbody>
-        </table>
-
-        <div class="section-title">4. Personal Reflections & Goals Worksheet</div>
+        <div class="section-title">2. Personal Reflections & Goals Worksheet</div>
         <p style="font-size: 12px; color: #475569; font-style: italic;">Edit this Word document directly to refine your goals and weekly priorities.</p>
         <p style="font-size: 12px;">• Primary Focus Goal: ____________________________________________________________________</p>
         <p style="font-size: 12px;">• Secondary Goal: ________________________________________________________________________</p>

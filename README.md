@@ -44,23 +44,19 @@ To save time, the planner pre-renders essential weekly routines:
 
 ## ✨ Key Features
 
+- 📅 **Uniform 168-Hour Schedule Matrix:** 7 Days (Sat–Fri) × 24 Uniform Vertical Hour Rows (10 PM–9 PM).
+- ✂️ **In-Cell Sub-Hour Breakdown:** Click any 1-hour cell or gear icon to split it into **2 x 30m** or **4 x 15m** sub-slots. Assign different legends to each sub-slot within the same hour!
+- 📝 **Legend Notes & Goals:** Add, edit, and save custom goals and notes for every legend. Notes are preserved in local storage and included in Word exports.
+- ⏳ **Dynamic Life Calculator (Weeks, Days & Hours):** Input your age to calculate weeks lived/remaining alongside exact **Days** and **Hours** count (`1,460 weeks • 10,220 days • 245,280 hrs lived`).
 - 📊 **Daily & Weekly Percentage Metrics:** Live percentage breakdown per legend across both daily (24h) and weekly (168h) allocations.
-- 🎯 **Click-to-Toggle Box Selection:** Tap/click any cell to assign the active legend brush. Tap the same cell again to unselect it and revert to unallocated time.
-- ⏰ **Custom Time Block Units:** Select your preferred planning block granularity from the top bar dropdown:
-  - **1 Hour Blocks** (Default - 168 total blocks)
-  - **15 Min Blocks** (672 total blocks for micro-tasking)
-  - **30 Min Blocks** (336 total blocks)
-  - **2 Hour Blocks** (84 total blocks)
-  - **4 Hour Blocks** (42 total blocks)
-- 📅 **168-Hour Schedule Matrix:** 7 Days (Sat–Fri) × Vertical Time Slots (10 PM–9 PM).
+- 🎯 **Click-to-Toggle Box Selection:** Tap/click any cell or sub-slot to assign the active legend brush. Tap the same box again to unselect it and revert to unallocated time.
 - 🖌️ **Click & Drag-to-Paint:** Select an active legend brush and drag across cells to rapidly assign blocks of time.
 - 🎨 **Dynamic Legend System:** Create, edit, and update custom categories with color pickers and palettes.
 - 📄 **Microsoft Word (`.docx`) Export:** Download a complete, beautifully formatted `.docx` file containing:
-  - Weekly Category Summary Table.
-  - Detailed Day-by-Day Chronological Task Agenda.
+  - Weekly Category Allocation & Notes Summary Table.
+  - Detailed Day-by-Day Chronological Task Agenda (supporting sub-slots).
   - Full 7-Day Visual Schedule Matrix Table.
   - Personal Reflections & Goal Worksheet.
-- ⌛ **Human Life Calculator:** Input your age to calculate weeks lived, weeks remaining, percentage completed, and lifetime hours left.
 - 🔒 **100% Client-Side Privacy:** All data is persisted safely in browser `localStorage`. Zero server tracking.
 
 ---

@@ -115,7 +115,7 @@
       </div>
     </header>
 
-    <!-- Human Life Weeks Perspective Banner -->
+    <!-- Human Life Perspective Banner (DYNAMIC WEEKS, DAYS & HOURS CALCULATOR) -->
     <section class="bg-gradient-to-r from-indigo-950/80 via-slate-900 to-purple-950/80 border border-indigo-800/50 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden space-y-4">
       <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -128,10 +128,10 @@
             <span>Dynamic Human Life Perspective</span>
           </div>
           <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2 flex-wrap">
-            Average Human Lifespan: <span class="text-indigo-400 font-extrabold underline decoration-indigo-500/40">~4,000 Weeks</span> (~76.9 Years)
+            Average Lifespan: <span class="text-indigo-400 font-extrabold underline decoration-indigo-500/40">~4,000 Weeks</span> (~28,000 Days • 672,000 Hours)
           </h2>
           <p id="life-perspective-text" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Change your age to calculate your life progress, weeks remaining, and remaining lifetime hours dynamically!
+            Change your age to dynamically see your life progress in Weeks, Days, and Hours!
           </p>
         </div>
 
@@ -147,33 +147,40 @@
 
       </div>
 
-      <!-- DYNAMIC LIFE METRICS DASHBOARD GRID -->
+      <!-- DYNAMIC LIFE METRICS DASHBOARD GRID (WEEKS, DAYS & HOURS) -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-2 border-t border-indigo-900/50 relative z-10">
         
+        <!-- WEEKS & DAYS LIVED -->
         <div class="bg-slate-900/80 border border-indigo-950 p-2.5 rounded-xl text-center">
-          <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Weeks Lived</span>
-          <span id="metric-weeks-lived" class="text-sm sm:text-base font-extrabold text-amber-400">1,460</span>
-          <span id="metric-pct-lived" class="block text-[10px] text-amber-500/90 font-medium">(36.5%)</span>
+          <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lived (Weeks & Days)</span>
+          <span id="metric-weeks-lived" class="text-sm sm:text-base font-extrabold text-amber-400">1,460 weeks</span>
+          <span id="metric-days-lived" class="block text-[10px] text-amber-300/90 font-semibold mt-0.5">10,220 days</span>
+          <span id="metric-hours-lived" class="block text-[9px] text-amber-500/80 font-medium">(245,280 hrs • 36.5%)</span>
         </div>
 
+        <!-- WEEKS & DAYS REMAINING -->
         <div class="bg-slate-900/80 border border-indigo-950 p-2.5 rounded-xl text-center">
-          <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Weeks Remaining</span>
-          <span id="metric-weeks-remaining" class="text-sm sm:text-base font-extrabold text-emerald-400">2,540</span>
-          <span id="metric-pct-remaining" class="block text-[10px] text-emerald-500/90 font-medium">(63.5%)</span>
+          <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Remaining (Weeks & Days)</span>
+          <span id="metric-weeks-remaining" class="text-sm sm:text-base font-extrabold text-emerald-400">2,540 weeks</span>
+          <span id="metric-days-remaining" class="block text-[10px] text-emerald-300/90 font-semibold mt-0.5">17,780 days</span>
+          <span id="metric-pct-remaining" class="block text-[9px] text-emerald-500/80 font-medium">(63.5% left)</span>
         </div>
 
+        <!-- YEARS REMAINING -->
         <div class="bg-slate-900/80 border border-indigo-950 p-2.5 rounded-xl text-center">
           <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Years Remaining</span>
           <span id="metric-years-remaining" class="text-sm sm:text-base font-extrabold text-indigo-300">48.9 yrs</span>
-          <span class="block text-[10px] text-indigo-400/80 font-medium">Est. Lifespan</span>
+          <span class="block text-[10px] text-indigo-400/80 font-medium">Est. Lifespan ~76.9y</span>
         </div>
 
+        <!-- LIFETIME HOURS LEFT -->
         <div class="bg-slate-900/80 border border-indigo-950 p-2.5 rounded-xl text-center col-span-2 sm:col-span-1">
           <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lifetime Hours Left</span>
           <span id="metric-lifetime-hours" class="text-sm sm:text-base font-extrabold text-purple-300">426,720 hrs</span>
-          <span class="block text-[10px] text-purple-400/80 font-medium">Remaining Hours</span>
+          <span class="block text-[10px] text-purple-400/80 font-medium">Total Remaining Hours</span>
         </div>
 
+        <!-- LIFE PROGRESS BAR -->
         <div class="bg-slate-900/80 border border-indigo-950 p-2.5 rounded-xl text-center col-span-2 lg:col-span-1 flex flex-col justify-between">
           <div class="flex justify-between text-[10px] text-slate-400 mb-1">
             <span>Life Progress</span>
@@ -187,34 +194,20 @@
       </div>
     </section>
 
-    <!-- Top Legends Control Panel & Time Block Customizer -->
+    <!-- Top Legends Control Panel & Notes Management -->
     <section class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         
         <div>
           <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
             <i data-lucide="palette" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-400"></i>
-            <span>Schedule Legends & Brushes</span>
+            <span>Schedule Legends, Notes & Brushes</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Select a legend brush. Tap any box to toggle (select/unselect) or drag across to paint continuous blocks.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Select a legend brush. Tap any box to toggle select/unselect or split a 1-hour cell into 15m/30m sub-slots.</p>
         </div>
 
-        <!-- Controls: Time Block Selector, Filter & Add Legend -->
+        <!-- Controls: Filter & Add Legend -->
         <div class="flex flex-wrap items-center gap-2">
-          
-          <!-- TIME BLOCK UNIT DROPDOWN SELECTOR -->
-          <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl">
-            <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
-            <label for="select-block-unit" class="text-[11px] font-semibold text-slate-400 whitespace-nowrap hidden sm:inline">Block Unit:</label>
-            <select id="select-block-unit" class="bg-transparent text-xs text-indigo-300 font-bold focus:outline-none cursor-pointer">
-              <option value="60" selected>1 Hour Blocks (Default)</option>
-              <option value="15">15 Min Blocks</option>
-              <option value="30">30 Min Blocks</option>
-              <option value="120">2 Hour Blocks</option>
-              <option value="240">4 Hour Blocks</option>
-            </select>
-          </div>
-
           <!-- Filter toggle -->
           <div class="relative">
             <select id="filter-legend-select" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-blue-500">
@@ -225,9 +218,8 @@
           <!-- Add Legend Button -->
           <button id="btn-add-legend" class="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-md transition flex-shrink-0">
             <i data-lucide="plus" class="w-4 h-4"></i>
-            <span>Add Legend</span>
+            <span>Add Legend & Notes</span>
           </button>
-
         </div>
 
       </div>
@@ -240,13 +232,12 @@
           <span id="brush-name" class="font-bold text-white">Sleep</span>
         </div>
         <div class="flex items-center gap-3 text-slate-400 text-[11px]">
-          <span id="active-unit-badge" class="px-2 py-0.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded font-semibold">1 Hour Blocks</span>
-          <span class="hidden sm:inline">Tap cell to toggle (select/unselect) • Drag to paint continuous blocks</span>
+          <span class="hidden sm:inline">Tap box to toggle • Right-click / Gear icon on cell to split into 15m/30m sub-slots</span>
         </div>
       </div>
 
-      <!-- Legends Cards Container (Shows Daily & Weekly Percentages per Legend) -->
-      <div id="legends-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
+      <!-- Legends Cards Container (Shows Daily & Weekly Percentages + Notes) -->
+      <div id="legends-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         <!-- Rendered dynamically via JS -->
       </div>
     </section>
@@ -266,7 +257,7 @@
 
       <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 pr-2">
         <i data-lucide="info" class="w-3.5 h-3.5 text-blue-400"></i>
-        <span>Switch view modes anytime</span>
+        <span>Uniform 1-Hour Grid • Sub-hour 15m/30m slot breakdown supported</span>
       </div>
     </div>
 
@@ -323,7 +314,7 @@
 
     </section>
 
-    <!-- 168-HOUR TIME GRID MATRIX VIEW SECTION -->
+    <!-- 168-HOUR TIME GRID MATRIX VIEW SECTION (Uniform 24 Rows x 7 Days Grid) -->
     <section id="view-grid-container" class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
       
       <!-- Grid Header & Quick Time Actions -->
@@ -333,7 +324,7 @@
             <i data-lucide="calendar" class="w-5 h-5 text-indigo-400"></i>
             <span>Weekly Schedule Matrix (168 Hours)</span>
           </h2>
-          <p id="matrix-subtitle" class="text-xs text-slate-400 mt-0.5">Saturday to Friday • 10:00 PM (Night) to 9:00 PM</p>
+          <p id="matrix-subtitle" class="text-xs text-slate-400 mt-0.5">Saturday to Friday • 10:00 PM (Night) to 9:00 PM (24 Hours)</p>
         </div>
 
         <div class="flex items-center gap-2 text-xs text-slate-400">
@@ -342,8 +333,8 @@
             Unallocated
           </span>
           <span class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg">
-            <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-blue-400"></i>
-            Tap box to toggle select/unselect
+            <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-400"></i>
+            Click cell gear icon to split into 15m/30m
           </span>
         </div>
       </div>
@@ -366,7 +357,7 @@
             </tr>
           </thead>
           <tbody id="grid-tbody" class="divide-y divide-slate-800/60 text-xs">
-            <!-- Rows generated dynamically by app.js -->
+            <!-- 24 Uniform Hour Rows generated dynamically by app.js -->
           </tbody>
           <tfoot id="grid-tfoot" class="bg-slate-800/90 text-slate-200 text-xs font-bold border-t-2 border-slate-700 divide-x divide-slate-700/60">
             <!-- Footer Daily Summary generated dynamically by app.js -->
@@ -388,13 +379,13 @@
 
     <!-- Footer / Perspective & LocalStorage info -->
     <footer class="text-center py-6 text-xs text-slate-500 space-y-2">
-      <p>100% Private & Local • Stored securely in your browser.</p>
-      <p>© 168 Hours Weekly Life OS • Daily & Weekly Percentages • Click-to-Toggle Assignment</p>
+      <p>100% Private & Local • Stored securely in your browser's local storage.</p>
+      <p>© 168 Hours Weekly Life OS • 1-Hour Uniform Grid • In-cell Sub-hour Splits (15m/30m) • Legend Notes</p>
     </footer>
 
   </div>
 
-  <!-- Add / Edit Legend Modal -->
+  <!-- Add / Edit Legend & Notes Modal -->
   <div id="modal-legend" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-200">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 sm:space-y-5 transform scale-95 transition-transform duration-200">
       
@@ -409,6 +400,11 @@
         <div>
           <label for="input-legend-name" class="block text-xs font-semibold text-slate-300 mb-1">Legend Name</label>
           <input type="text" id="input-legend-name" placeholder="e.g. Deep Work, Gym, Reading" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <div>
+          <label for="input-legend-notes" class="block text-xs font-semibold text-slate-300 mb-1">Legend Notes & Goals (Optional)</label>
+          <textarea id="input-legend-notes" rows="3" placeholder="Add specific goals, routines, or notes for this category (e.g., Sleep 8h target, Gym 45m workout)..." class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 resize-none"></textarea>
         </div>
 
         <div>
@@ -429,9 +425,40 @@
 
       <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-700">
         <button id="btn-cancel-modal" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition">Cancel</button>
-        <button id="btn-save-legend" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition shadow-md">Save Legend</button>
+        <button id="btn-save-legend" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition shadow-md">Save Legend & Notes</button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Cell Split Sub-Slot Modal -->
+  <div id="modal-cell-split" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+        <h4 id="split-modal-title" class="text-sm font-bold text-white">Sub-hour Slot Breakdown</h4>
+        <button id="btn-close-split-modal" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300">Choose how to break down this 1-hour time slot:</p>
+
+      <div class="space-y-2">
+        <button id="btn-split-full" class="w-full px-3.5 py-2.5 bg-slate-900 hover:bg-slate-700 border border-slate-700 text-white text-xs font-semibold rounded-xl flex items-center justify-between transition">
+          <span>Single 1-Hour Block (Default)</span>
+          <span class="text-[10px] text-slate-400">1 x 60m</span>
+        </button>
+
+        <button id="btn-split-30m" class="w-full px-3.5 py-2.5 bg-slate-900 hover:bg-slate-700 border border-slate-700 text-white text-xs font-semibold rounded-xl flex items-center justify-between transition">
+          <span>Split into Two 30-Min Blocks</span>
+          <span class="text-[10px] text-indigo-400 font-bold">2 x 30m</span>
+        </button>
+
+        <button id="btn-split-15m" class="w-full px-3.5 py-2.5 bg-slate-900 hover:bg-slate-700 border border-slate-700 text-white text-xs font-semibold rounded-xl flex items-center justify-between transition">
+          <span>Split into Four 15-Min Blocks</span>
+          <span class="text-[10px] text-emerald-400 font-bold">4 x 15m</span>
+        </button>
+      </div>
     </div>
   </div>
 
