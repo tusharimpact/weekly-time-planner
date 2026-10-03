@@ -60,17 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'leg_family', name: 'Family & Social', color: '#ec4899' },
   ];
 
-  // Detect initial mobile view
   const isMobileInitial = window.innerWidth < 768;
 
   // 2. Application State
   let state = {
     legends: [...DEFAULT_LEGENDS],
-    activeBrushId: 'leg_sleep', // Current selected legend brush
-    grid: {}, // Key: `${dayIndex}_${slotIndex}`, Value: legendId
+    activeBrushId: 'leg_sleep',
+    grid: {},
     userAge: 28,
     activeFilterId: 'all',
-    viewMode: isMobileInitial ? 'day' : 'grid', // 'day' (Mobile Feed) or 'grid' (7-Day Matrix)
+    viewMode: isMobileInitial ? 'day' : 'grid', // 'day' or 'grid'
     activeDayIndex: 0, // 0 = Saturday
   };
 
@@ -115,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const parsed = JSON.parse(saved);
         if (parsed.legends && parsed.legends.length > 0) state.legends = parsed.legends;
         if (parsed.grid) state.grid = parsed.grid;
-        if (parsed.userAge) state.userAge = parsed.userAge;
+        if (parsed.userAge !== undefined) state.userAge = parsed.userAge;
 
         if (!state.legends.find(l => l.id === state.activeBrushId)) {
           state.activeBrushId = state.legends[0].id;
@@ -133,18 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
     state.grid = {};
     
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      // 1. Sleep: 10 PM to 6 AM (Slots 0 to 7) -> 8 hours
       for (let slot = 0; slot <= 7; slot++) {
         state.grid[`${dayIndex}_${slot}`] = 'leg_sleep';
       }
 
-      // 2. Routine Work: 6 AM to 8 AM (Slots 8, 9) & 7 PM to 9 PM (Slots 21, 22) -> 4 hours
       state.grid[`${dayIndex}_8`] = 'leg_routine';
       state.grid[`${dayIndex}_9`] = 'leg_routine';
       state.grid[`${dayIndex}_21`] = 'leg_routine';
       state.grid[`${dayIndex}_22`] = 'leg_routine';
 
-      // 3. 9-to-5 Work: General Workdays (Sunday - Thursday, index 1 to 5)
       if (dayIndex >= 1 && dayIndex <= 5) {
         for (let slot = 11; slot <= 18; slot++) {
           state.grid[`${dayIndex}_${slot}`] = 'leg_work';
@@ -157,32 +153,91 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 5. Render Functions
 
-  // Render View Mode Toggle
+  /**
+   * Render DYNAMIC Life Perspective Calculator Metrics
+   * Recalculates and updates ALL metrics live when age changes!
+   */
+  function renderLifePerspective() {
+    const age = Math.max(1, Math.min(120, parseInt(state.userAge) || 28));
+    const totalWeeks = 4000;
+    const avgLifespanYears = 76.92;
+
+    const weeksLived = Math.min(totalWeeks, Math.round(age * 52.1429));
+    const weeksRemaining = Math.max(0, totalWeeks - weeksLived);
+    const livedPct = ((weeksLived / totalWeeks) * 100).toFixed(1);
+    const remainingPct = (100 - parseFloat(livedPct)).toFixed(1);
+
+    const yearsRemaining = Math.max(0, avgLifespanYears - age).toFixed(1);
+    const lifetimeHoursLeft = (weeksRemaining * 168);
+
+    // Update Input value
+    const ageInput = document.getElementById('user-age-input');
+    if (ageInput && ageInput.value != age) {
+      ageInput.value = age;
+    }
+
+    // Update Dynamic Banner Text
+    const descText = document.getElementById('life-perspective-text');
+    if (descText) {
+      descText.innerHTML = `
+        At age <strong class="text-white font-bold">${age}</strong>, you have spent <strong class="text-amber-400 font-bold">${weeksLived.toLocaleString()} weeks</strong> (~${livedPct}%) of an average 4,000-week lifespan and have <strong class="text-emerald-400 font-bold">${weeksRemaining.toLocaleString()} weeks</strong> remaining. Make each 168-hour week count!
+      `;
+    }
+
+    // Update Metric Badges
+    const elWeeksLived = document.getElementById('metric-weeks-lived');
+    const elPctLived = document.getElementById('metric-pct-lived');
+    if (elWeeksLived) elWeeksLived.textContent = weeksLived.toLocaleString();
+    if (elPctLived) elPctLived.textContent = `(${livedPct}%)`;
+
+    const elWeeksRem = document.getElementById('metric-weeks-remaining');
+    const elPctRem = document.getElementById('metric-pct-remaining');
+    if (elWeeksRem) elWeeksRem.textContent = weeksRemaining.toLocaleString();
+    if (elPctRem) elPctRem.textContent = `(${remainingPct}%)`;
+
+    const elYearsRem = document.getElementById('metric-years-remaining');
+    if (elYearsRem) elYearsRem.textContent = `${yearsRemaining} yrs`;
+
+    const elLifetimeHours = document.getElementById('metric-lifetime-hours');
+    if (elLifetimeHours) elLifetimeHours.textContent = `${lifetimeHoursLeft.toLocaleString()} hrs`;
+
+    const elBarPct = document.getElementById('metric-bar-pct');
+    if (elBarPct) elBarPct.textContent = `${livedPct}%`;
+
+    const elProgressBar = document.getElementById('life-progress-bar');
+    if (elProgressBar) elProgressBar.style.width = `${livedPct}%`;
+  }
+
+  // Render View Mode Toggle Tabs
   function renderViewModeToggle() {
     const btnDay = document.getElementById('tab-btn-day');
     const btnGrid = document.getElementById('tab-btn-grid');
     const dayContainer = document.getElementById('view-day-container');
     const gridContainer = document.getElementById('view-grid-container');
 
+    if (!btnDay || !btnGrid || !dayContainer || !gridContainer) return;
+
     if (state.viewMode === 'day') {
-      btnDay.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md';
-      btnGrid.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-700/60';
+      btnDay.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md';
+      btnGrid.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-700/60';
       dayContainer.classList.remove('hidden');
       gridContainer.classList.add('hidden');
     } else {
-      btnGrid.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md';
-      btnDay.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-700/60';
+      btnGrid.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-md';
+      btnDay.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-700/60';
       gridContainer.classList.remove('hidden');
       dayContainer.classList.add('hidden');
     }
   }
 
-  // Single Day Mobile Feed Render
+  // Single Day Feed Render
   function renderSingleDayFeed() {
-    const dayName = DAYS[state.activeDayIndex];
-    document.getElementById('active-day-heading').textContent = dayName;
+    const dayHeading = document.getElementById('active-day-heading');
+    if (!dayHeading) return;
 
-    // Count day hours
+    const dayName = DAYS[state.activeDayIndex];
+    dayHeading.textContent = dayName;
+
     let dayAllocated = 0;
     for (let slot = 0; slot < 24; slot++) {
       const key = `${state.activeDayIndex}_${slot}`;
@@ -191,30 +246,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     const dayUnallocated = 24 - dayAllocated;
-    document.getElementById('active-day-subtitle').textContent = `Allocated: ${dayAllocated} hrs • ${dayUnallocated} hrs Unallocated`;
+    const subTitle = document.getElementById('active-day-subtitle');
+    if (subTitle) subTitle.textContent = `Allocated: ${dayAllocated} hrs • ${dayUnallocated} hrs Unallocated`;
 
-    // Render Day Navigation Tabs
+    // Day Navigation Tabs
     const navContainer = document.getElementById('day-tabs-nav');
-    navContainer.innerHTML = '';
-
-    DAYS.forEach((d, index) => {
-      const isSelected = index === state.activeDayIndex;
-      const tab = document.createElement('button');
-      tab.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-        isSelected
-          ? 'bg-blue-600 text-white shadow-md'
-          : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/60'
-      }`;
-      tab.textContent = d.substring(0, 3); // Sat, Sun...
-      tab.addEventListener('click', () => {
-        state.activeDayIndex = index;
-        renderSingleDayFeed();
+    if (navContainer) {
+      navContainer.innerHTML = '';
+      DAYS.forEach((d, index) => {
+        const isSelected = index === state.activeDayIndex;
+        const tab = document.createElement('button');
+        tab.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          isSelected
+            ? 'bg-blue-600 text-white shadow-md'
+            : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/60'
+        }`;
+        tab.textContent = d.substring(0, 3);
+        tab.addEventListener('click', () => {
+          state.activeDayIndex = index;
+          renderSingleDayFeed();
+        });
+        navContainer.appendChild(tab);
       });
-      navContainer.appendChild(tab);
-    });
+    }
 
-    // Render 24 Hourly Feed Cards for the active day
+    // Render 24 Hourly Feed Cards
     const feedContainer = document.getElementById('single-day-feed');
+    if (!feedContainer) return;
     feedContainer.innerHTML = '';
 
     TIME_SLOTS.forEach((slotLabel, slotIndex) => {
@@ -233,7 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
           : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
       }`;
 
-      // Left: Time slot badge & legend name
       const leftDiv = document.createElement('div');
       leftDiv.className = 'flex items-center gap-3 min-w-0';
 
@@ -264,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
       leftDiv.appendChild(colorSwatch);
       leftDiv.appendChild(textDiv);
 
-      // Right: Quick Select Dropdown for direct mobile pick
+      // Inline Quick Select Dropdown
       const select = document.createElement('select');
       select.className = 'px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-blue-500';
       
@@ -299,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
       card.appendChild(leftDiv);
       card.appendChild(select);
 
-      // Single Tap on Card to paint active brush
       card.addEventListener('click', (e) => {
         if (e.target.tagName === 'SELECT') return;
         paintSlotKey(cellKey);
@@ -310,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Mobile Sticky Toolbar
+  // Mobile Sticky Bottom Toolbar
   function renderMobileStickyToolbar() {
     const chipsContainer = document.getElementById('mobile-legend-chips');
     if (!chipsContainer) return;
@@ -337,7 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
       chipsContainer.appendChild(chip);
     });
 
-    // Eraser chip
     const isEraserSelected = state.activeBrushId === 'eraser';
     const eraserChip = document.createElement('button');
     eraserChip.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold flex-shrink-0 transition-all ${
@@ -358,28 +413,11 @@ document.addEventListener('DOMContentLoaded', () => {
     chipsContainer.appendChild(eraserChip);
   }
 
-  // Life Perspective Calculator
-  function renderLifePerspective() {
-    const age = parseInt(state.userAge) || 28;
-    const totalWeeks = 4000;
-    const weeksLived = Math.min(totalWeeks, Math.round(age * 52.1429));
-    const weeksRemaining = Math.max(0, totalWeeks - weeksLived);
-    const livedPct = ((weeksLived / totalWeeks) * 100).toFixed(1);
-
-    document.getElementById('user-age-input').value = age;
-    document.getElementById('weeks-lived-text').textContent = `${weeksLived.toLocaleString()} weeks`;
-    document.getElementById('weeks-remaining-text').textContent = `${weeksRemaining.toLocaleString()} weeks`;
-    document.getElementById('life-weeks-badge').textContent = `${weeksLived.toLocaleString()} / 4,000 (${livedPct}%)`;
-
-    document.getElementById('life-perspective-text').innerHTML = `
-      You have spent <strong class="text-amber-400 font-bold">${weeksLived.toLocaleString()} weeks</strong> (~${livedPct}%) of an average 4,000-week lifespan and have <strong class="text-emerald-400 font-bold">${weeksRemaining.toLocaleString()} weeks</strong> remaining. Each week holds 168 precious hours — design them intentionally!
-    `;
-  }
-
   // Legends & Active Brush Panel
   function renderLegends() {
     const container = document.getElementById('legends-list');
     const filterSelect = document.getElementById('filter-legend-select');
+    if (!container || !filterSelect) return;
     
     container.innerHTML = '';
     
@@ -469,13 +507,13 @@ document.addEventListener('DOMContentLoaded', () => {
     container.appendChild(eraserCard);
 
     updateActiveBrushBar();
-
     if (window.lucide) window.lucide.createIcons();
   }
 
   function updateActiveBrushBar() {
     const barName = document.getElementById('brush-name');
     const barSwatch = document.getElementById('brush-color-swatch');
+    if (!barName || !barSwatch) return;
 
     if (state.activeBrushId === 'eraser') {
       barName.textContent = 'Eraser / Unallocated';
@@ -493,6 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render 168-Hour Schedule Matrix Grid Table
   function renderGridTable() {
     const tbody = document.getElementById('grid-tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     TIME_SLOTS.forEach((slotLabel, slotIndex) => {
@@ -609,10 +648,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const unallocated = 168 - allocated;
     const percent = Math.min(100, Math.round((allocated / 168) * 100));
 
-    document.getElementById('stat-allocated').innerHTML = `${allocated} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
-    document.getElementById('stat-unallocated').innerHTML = `${unallocated} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
-    document.getElementById('stat-percent').textContent = `${percent}%`;
-    document.getElementById('stat-progress-bar').style.width = `${percent}%`;
+    const elAlloc = document.getElementById('stat-allocated');
+    const elUnalloc = document.getElementById('stat-unallocated');
+    const elPct = document.getElementById('stat-percent');
+    const elBar = document.getElementById('stat-progress-bar');
+
+    if (elAlloc) elAlloc.innerHTML = `${allocated} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
+    if (elUnalloc) elUnalloc.innerHTML = `${unallocated} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
+    if (elPct) elPct.textContent = `${percent}%`;
+    if (elBar) elBar.style.width = `${percent}%`;
 
     renderLegends();
     renderMobileStickyToolbar();
@@ -620,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderColorPalette() {
     const picker = document.getElementById('color-palette-picker');
+    if (!picker) return;
     picker.innerHTML = '';
 
     COLOR_PALETTE.forEach(colorHex => {
@@ -646,186 +691,238 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // View Mode Tab Switching
-    document.getElementById('tab-btn-day').addEventListener('click', () => {
-      state.viewMode = 'day';
-      renderViewModeToggle();
-      renderSingleDayFeed();
-    });
+    const tabBtnDay = document.getElementById('tab-btn-day');
+    if (tabBtnDay) {
+      tabBtnDay.addEventListener('click', () => {
+        state.viewMode = 'day';
+        renderViewModeToggle();
+        renderSingleDayFeed();
+      });
+    }
 
-    document.getElementById('tab-btn-grid').addEventListener('click', () => {
-      state.viewMode = 'grid';
-      renderViewModeToggle();
-      renderGridTable();
-    });
+    const tabBtnGrid = document.getElementById('tab-btn-grid');
+    if (tabBtnGrid) {
+      tabBtnGrid.addEventListener('click', () => {
+        state.viewMode = 'grid';
+        renderViewModeToggle();
+        renderGridTable();
+      });
+    }
 
-    // Single Day Prev/Next navigation buttons
-    document.getElementById('btn-prev-day').addEventListener('click', () => {
-      state.activeDayIndex = (state.activeDayIndex - 1 + 7) % 7;
-      renderSingleDayFeed();
-    });
+    // Single Day Navigation Prev/Next
+    const btnPrev = document.getElementById('btn-prev-day');
+    if (btnPrev) {
+      btnPrev.addEventListener('click', () => {
+        state.activeDayIndex = (state.activeDayIndex - 1 + 7) % 7;
+        renderSingleDayFeed();
+      });
+    }
 
-    document.getElementById('btn-next-day').addEventListener('click', () => {
-      state.activeDayIndex = (state.activeDayIndex + 1) % 7;
-      renderSingleDayFeed();
-    });
+    const btnNext = document.getElementById('btn-next-day');
+    if (btnNext) {
+      btnNext.addEventListener('click', () => {
+        state.activeDayIndex = (state.activeDayIndex + 1) % 7;
+        renderSingleDayFeed();
+      });
+    }
 
-    // Age Input change
-    document.getElementById('user-age-input').addEventListener('input', (e) => {
-      state.userAge = Math.max(1, Math.min(120, parseInt(e.target.value) || 28));
-      renderLifePerspective();
-      saveStateToStorage();
-    });
+    // DYNAMIC AGE INPUT LISTENERS (Input, Change, Keyup, Wheel)
+    const ageInput = document.getElementById('user-age-input');
+    if (ageInput) {
+      const handleAgeChange = (e) => {
+        const val = parseInt(e.target.value);
+        if (!isNaN(val)) {
+          state.userAge = Math.max(1, Math.min(120, val));
+          renderLifePerspective();
+          saveStateToStorage();
+        }
+      };
 
-    // Filter Select change
-    document.getElementById('filter-legend-select').addEventListener('change', (e) => {
-      state.activeFilterId = e.target.value;
-      renderGridTable();
-      renderSingleDayFeed();
-    });
+      ageInput.addEventListener('input', handleAgeChange);
+      ageInput.addEventListener('change', handleAgeChange);
+      ageInput.addEventListener('keyup', handleAgeChange);
+    }
+
+    // Filter Select
+    const filterSelect = document.getElementById('filter-legend-select');
+    if (filterSelect) {
+      filterSelect.addEventListener('change', (e) => {
+        state.activeFilterId = e.target.value;
+        renderGridTable();
+        renderSingleDayFeed();
+      });
+    }
 
     // Export Word Button
-    document.getElementById('btn-export-word').addEventListener('click', () => {
-      if (window.DocxExporter) {
-        window.DocxExporter.exportToWord({
-          days: DAYS,
-          slots: TIME_SLOTS,
-          legends: state.legends,
-          grid: state.grid,
-          age: state.userAge
-        });
-      }
-    });
+    const btnWord = document.getElementById('btn-export-word');
+    if (btnWord) {
+      btnWord.addEventListener('click', () => {
+        if (window.DocxExporter) {
+          window.DocxExporter.exportToWord({
+            days: DAYS,
+            slots: TIME_SLOTS,
+            legends: state.legends,
+            grid: state.grid,
+            age: state.userAge
+          });
+        }
+      });
+    }
 
     // Reset Defaults Button
-    document.getElementById('btn-reset-defaults').addEventListener('click', () => {
-      if (confirm('Reset your schedule to standard pre-rendered defaults (8h Sleep, 4h Routine, 9-5 Work)?')) {
-        applyPreRenderedDefaults();
-        renderGridTable();
-        renderSingleDayFeed();
-        updateStatistics();
-      }
-    });
-
-    // Clear All Grid Button
-    document.getElementById('btn-clear-all').addEventListener('click', () => {
-      if (confirm('Clear all allocated hours from the schedule matrix?')) {
-        state.grid = {};
-        saveStateToStorage();
-        renderGridTable();
-        renderSingleDayFeed();
-        updateStatistics();
-      }
-    });
-
-    // Add Legend Modal Trigger
-    document.getElementById('btn-add-legend').addEventListener('click', () => {
-      editingLegendId = null;
-      document.getElementById('modal-legend-title').textContent = 'Add New Legend';
-      document.getElementById('input-legend-name').value = '';
-      const randomColor = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
-      document.getElementById('input-color-picker').value = randomColor;
-      document.getElementById('input-custom-hex').value = randomColor;
-
-      openModal();
-    });
-
-    document.getElementById('input-color-picker').addEventListener('input', (e) => {
-      document.getElementById('input-custom-hex').value = e.target.value;
-    });
-
-    document.getElementById('input-custom-hex').addEventListener('input', (e) => {
-      const val = e.target.value;
-      if (/^#[0-9A-F]{6}$/i.test(val)) {
-        document.getElementById('input-color-picker').value = val;
-      }
-    });
-
-    document.getElementById('btn-save-legend').addEventListener('click', () => {
-      const name = document.getElementById('input-legend-name').value.trim();
-      const color = document.getElementById('input-custom-hex').value.trim();
-
-      if (!name) {
-        alert('Please enter a name for your legend.');
-        return;
-      }
-
-      if (editingLegendId) {
-        const legend = state.legends.find(l => l.id === editingLegendId);
-        if (legend) {
-          legend.name = name;
-          legend.color = color;
-        }
-      } else {
-        const newId = 'leg_' + Date.now();
-        const newLegend = { id: newId, name, color };
-        state.legends.push(newLegend);
-        state.activeBrushId = newId;
-      }
-
-      saveStateToStorage();
-      renderLegends();
-      renderMobileStickyToolbar();
-      renderGridTable();
-      renderSingleDayFeed();
-      updateStatistics();
-      closeModal();
-    });
-
-    document.getElementById('btn-close-modal').addEventListener('click', closeModal);
-    document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
-
-    document.getElementById('legends-list').addEventListener('click', (e) => {
-      const editBtn = e.target.closest('.btn-edit-legend');
-      const deleteBtn = e.target.closest('.btn-delete-legend');
-
-      if (editBtn) {
-        const id = editBtn.dataset.id;
-        const legend = state.legends.find(l => l.id === id);
-        if (legend) {
-          editingLegendId = id;
-          document.getElementById('modal-legend-title').textContent = 'Edit Legend';
-          document.getElementById('input-legend-name').value = legend.name;
-          document.getElementById('input-color-picker').value = legend.color;
-          document.getElementById('input-custom-hex').value = legend.color;
-          openModal();
-        }
-      }
-
-      if (deleteBtn) {
-        const id = deleteBtn.dataset.id;
-        const legend = state.legends.find(l => l.id === id);
-        if (legend && confirm(`Delete legend "${legend.name}"? Allocated hours will become unallocated.`)) {
-          state.legends = state.legends.filter(l => l.id !== id);
-          
-          Object.keys(state.grid).forEach(key => {
-            if (state.grid[key] === id) {
-              delete state.grid[key];
-            }
-          });
-
-          if (state.activeBrushId === id) {
-            state.activeBrushId = state.legends[0]?.id || 'eraser';
-          }
-
-          saveStateToStorage();
-          renderLegends();
-          renderMobileStickyToolbar();
+    const btnReset = document.getElementById('btn-reset-defaults');
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        if (confirm('Reset your schedule to standard pre-rendered defaults (8h Sleep, 4h Routine, 9-5 Work)?')) {
+          applyPreRenderedDefaults();
           renderGridTable();
           renderSingleDayFeed();
           updateStatistics();
         }
-      }
-    });
+      });
+    }
+
+    // Clear All Grid Button
+    const btnClear = document.getElementById('btn-clear-all');
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        if (confirm('Clear all allocated hours from the schedule matrix?')) {
+          state.grid = {};
+          saveStateToStorage();
+          renderGridTable();
+          renderSingleDayFeed();
+          updateStatistics();
+        }
+      });
+    }
+
+    // Add Legend Modal Trigger
+    const btnAddLegend = document.getElementById('btn-add-legend');
+    if (btnAddLegend) {
+      btnAddLegend.addEventListener('click', () => {
+        editingLegendId = null;
+        document.getElementById('modal-legend-title').textContent = 'Add New Legend';
+        document.getElementById('input-legend-name').value = '';
+        const randomColor = COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+        document.getElementById('input-color-picker').value = randomColor;
+        document.getElementById('input-custom-hex').value = randomColor;
+
+        openModal();
+      });
+    }
+
+    const picker = document.getElementById('input-color-picker');
+    if (picker) {
+      picker.addEventListener('input', (e) => {
+        document.getElementById('input-custom-hex').value = e.target.value;
+      });
+    }
+
+    const customHex = document.getElementById('input-custom-hex');
+    if (customHex) {
+      customHex.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          document.getElementById('input-color-picker').value = val;
+        }
+      });
+    }
+
+    const btnSaveLegend = document.getElementById('btn-save-legend');
+    if (btnSaveLegend) {
+      btnSaveLegend.addEventListener('click', () => {
+        const name = document.getElementById('input-legend-name').value.trim();
+        const color = document.getElementById('input-custom-hex').value.trim();
+
+        if (!name) {
+          alert('Please enter a name for your legend.');
+          return;
+        }
+
+        if (editingLegendId) {
+          const legend = state.legends.find(l => l.id === editingLegendId);
+          if (legend) {
+            legend.name = name;
+            legend.color = color;
+          }
+        } else {
+          const newId = 'leg_' + Date.now();
+          const newLegend = { id: newId, name, color };
+          state.legends.push(newLegend);
+          state.activeBrushId = newId;
+        }
+
+        saveStateToStorage();
+        renderLegends();
+        renderMobileStickyToolbar();
+        renderGridTable();
+        renderSingleDayFeed();
+        updateStatistics();
+        closeModal();
+      });
+    }
+
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
+
+    const btnCancelModal = document.getElementById('btn-cancel-modal');
+    if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
+
+    const legendsList = document.getElementById('legends-list');
+    if (legendsList) {
+      legendsList.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.btn-edit-legend');
+        const deleteBtn = e.target.closest('.btn-delete-legend');
+
+        if (editBtn) {
+          const id = editBtn.dataset.id;
+          const legend = state.legends.find(l => l.id === id);
+          if (legend) {
+            editingLegendId = id;
+            document.getElementById('modal-legend-title').textContent = 'Edit Legend';
+            document.getElementById('input-legend-name').value = legend.name;
+            document.getElementById('input-color-picker').value = legend.color;
+            document.getElementById('input-custom-hex').value = legend.color;
+            openModal();
+          }
+        }
+
+        if (deleteBtn) {
+          const id = deleteBtn.dataset.id;
+          const legend = state.legends.find(l => l.id === id);
+          if (legend && confirm(`Delete legend "${legend.name}"? Allocated hours will become unallocated.`)) {
+            state.legends = state.legends.filter(l => l.id !== id);
+            
+            Object.keys(state.grid).forEach(key => {
+              if (state.grid[key] === id) {
+                delete state.grid[key];
+              }
+            });
+
+            if (state.activeBrushId === id) {
+              state.activeBrushId = state.legends[0]?.id || 'eraser';
+            }
+
+            saveStateToStorage();
+            renderLegends();
+            renderMobileStickyToolbar();
+            renderGridTable();
+            renderSingleDayFeed();
+            updateStatistics();
+          }
+        }
+      });
+    }
   }
 
   function openModal() {
     const modal = document.getElementById('modal-legend');
-    modal.classList.add('active');
+    if (modal) modal.classList.add('active');
   }
 
   function closeModal() {
     const modal = document.getElementById('modal-legend');
-    modal.classList.remove('active');
+    if (modal) modal.classList.remove('active');
   }
 
   function escapeHtml(str) {
