@@ -511,10 +511,21 @@ document.addEventListener('DOMContentLoaded', () => {
             subBtn.style.backgroundColor = subLegend.color;
             subBtn.style.borderColor = subLegend.color;
             subBtn.style.color = '#ffffff';
-            subBtn.textContent = subLegend.name;
+
+            const subDuration = val.split === 2 ? '30m' : '15m';
+            const notesSubHtml = subLegend.notes 
+              ? `<div class="text-[9px] font-normal opacity-90 italic mt-0.5 truncate max-w-full" title="${escapeHtml(subLegend.notes)}">"${escapeHtml(subLegend.notes)}"</div>` 
+              : '';
+
+            subBtn.innerHTML = `
+              <span>${escapeHtml(subLegend.name)}</span>
+              ${notesSubHtml}
+            `;
+            subBtn.title = `${dayName} @ ${slotLabel} (${subDuration} sub-slot ${subIdx + 1}/${val.split}): ${subLegend.name}${subLegend.notes ? `\nNotes: "${subLegend.notes}"` : ''}`;
           } else {
             subBtn.className += ' bg-slate-900/60 border-slate-700/80 text-slate-400 italic';
             subBtn.textContent = `Unallocated (${formatHours(1.0 / val.split)}h)`;
+            subBtn.title = `${dayName} @ ${slotLabel} (Sub-slot ${subIdx + 1}/${val.split}): Unallocated`;
           }
 
           subBtn.addEventListener('click', (e) => {
@@ -537,19 +548,31 @@ document.addEventListener('DOMContentLoaded', () => {
           slotBtn.style.backgroundColor = legend.color;
           slotBtn.style.borderColor = legend.color;
           slotBtn.className += ' text-white font-bold text-xs';
+
+          const notesHtml = legend.notes 
+            ? `<div class="text-[11px] font-normal text-white/95 italic mt-1.5 pt-1.5 border-t border-white/25 flex items-start gap-1.5"><i data-lucide="notebook-pen" class="w-3.5 h-3.5 text-white/80 flex-shrink-0 mt-0.5"></i><span class="line-clamp-2">"${escapeHtml(legend.notes)}"</span></div>` 
+            : '';
+
           slotBtn.innerHTML = `
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-white/30"></span>
-              <span>${escapeHtml(legend.name)}</span>
+            <div class="w-full">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-white/30"></span>
+                  <span>${escapeHtml(legend.name)}</span>
+                </div>
+                <span class="text-[10px] font-normal opacity-90">1.0 Hour Block</span>
+              </div>
+              ${notesHtml}
             </div>
-            <span class="text-[10px] font-normal opacity-90">1.0 Hour Block</span>
           `;
+          slotBtn.title = `${dayName} @ ${slotLabel}\nCategory: ${legend.name}${legend.notes ? `\nNotes: "${legend.notes}"` : ''}`;
         } else {
           slotBtn.className += ' bg-slate-900/60 border-slate-700/80 text-slate-400 text-xs italic';
           slotBtn.innerHTML = `
             <span>Unallocated Time</span>
             <span class="text-[10px] font-normal text-slate-500">Tap to assign brush</span>
           `;
+          slotBtn.title = `${dayName} @ ${slotLabel}\nUnallocated Time`;
         }
 
         slotBtn.addEventListener('click', () => {
@@ -717,11 +740,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       card.innerHTML = cardHeader + notesHtml + cardStats;
 
+      card.addEventListener('mouseenter', () => {
+        highlightLegendSlots(legend.id);
+      });
+      card.addEventListener('mouseleave', () => {
+        removeLegendHighlights();
+      });
+
       card.addEventListener('click', (e) => {
         if (e.target.closest('.btn-edit-legend') || e.target.closest('.btn-delete-legend')) return;
         state.activeBrushId = legend.id;
         renderLegends();
         renderMobileStickyToolbar();
+        renderGridTable();
         updateActiveBrushBar();
       });
 
@@ -750,6 +781,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.activeBrushId = 'eraser';
       renderLegends();
       renderMobileStickyToolbar();
+      renderGridTable();
       updateActiveBrushBar();
     });
     container.appendChild(eraserCard);
@@ -758,14 +790,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  function highlightLegendSlots(legendId) {
+    document.querySelectorAll('#schedule-grid-table .cell-slot').forEach(td => {
+      const key = td.dataset.key;
+      if (!key) return;
+      const val = state.grid[key];
+      if (val === legendId) {
+        td.classList.add('ring-2', 'ring-white', 'z-20', 'shadow-lg');
+      } else if (val && typeof val === 'object' && val.split) {
+        if (val.sub && val.sub.includes(legendId)) {
+          td.classList.add('ring-2', 'ring-white/80', 'z-20');
+        }
+      }
+    });
+  }
+
+  function removeLegendHighlights() {
+    document.querySelectorAll('#schedule-grid-table .cell-slot').forEach(td => {
+      if (td.dataset.key) {
+        const val = state.grid[td.dataset.key];
+        const isCurrentActive = (typeof val === 'string' && val === state.activeBrushId) || (val && typeof val === 'object' && val.sub && val.sub.includes(state.activeBrushId));
+        if (!isCurrentActive) {
+          td.classList.remove('ring-2', 'ring-white', 'ring-white/80', 'z-20', 'shadow-lg');
+        }
+      }
+    });
+  }
+
   function updateActiveBrushBar() {
     const barName = document.getElementById('brush-name');
     const barSwatch = document.getElementById('brush-color-swatch');
+    const barContainer = document.getElementById('active-brush-bar');
     if (!barName || !barSwatch) return;
+
+    let notesEl = document.getElementById('active-brush-notes');
 
     if (state.activeBrushId === 'eraser') {
       barName.textContent = 'Eraser / Unallocated';
       barSwatch.style.backgroundColor = '#475569';
+      if (notesEl) notesEl.style.display = 'none';
       return;
     }
 
@@ -798,6 +861,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
       barName.innerHTML = `${escapeHtml(currentLegend.name)} — <span class="text-indigo-300 font-semibold">${formatHours(weeklyHrs)}h (${weeklyPct}% of wk)</span> • <span class="text-emerald-300 font-semibold">${formatHours(dayHrs)}h today (${dayPct}%)</span>`;
       barSwatch.style.backgroundColor = currentLegend.color;
+
+      if (!notesEl && barContainer) {
+        notesEl = document.createElement('div');
+        notesEl.id = 'active-brush-notes';
+        notesEl.className = 'w-full mt-2 text-xs text-indigo-200 bg-indigo-950/80 p-2.5 rounded-lg border border-indigo-700/60 flex items-start gap-2 shadow-inner';
+        barContainer.appendChild(notesEl);
+      }
+
+      if (notesEl) {
+        if (currentLegend.notes) {
+          notesEl.style.display = 'flex';
+          notesEl.innerHTML = `
+            <i data-lucide="notebook-pen" class="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5"></i>
+            <div>
+              <strong class="text-indigo-300">Notes & Goals for ${escapeHtml(currentLegend.name)}:</strong>
+              <p class="text-slate-200 italic mt-0.5">"${escapeHtml(currentLegend.notes)}"</p>
+            </div>
+          `;
+        } else {
+          notesEl.style.display = 'none';
+        }
+      }
     }
   }
 
@@ -853,7 +938,17 @@ document.addEventListener('DOMContentLoaded', () => {
               subBar.style.backgroundColor = subLegend.color;
               subBar.style.color = '#ffffff';
               subBar.textContent = val.split === 4 ? subLegend.name.substring(0, 3) : subLegend.name;
-              subBar.title = `${dayName} @ ${slotLabel} (Sub-slot ${subIdx + 1}/${val.split}): ${subLegend.name}`;
+              
+              const subDuration = val.split === 2 ? '30m' : '15m';
+              let tooltipText = `${dayName} @ ${slotLabel} (${subDuration} sub-slot ${subIdx + 1}/${val.split}): ${subLegend.name}`;
+              if (subLegend.notes) {
+                tooltipText += `\nNotes: "${subLegend.notes}"`;
+              }
+              subBar.title = tooltipText;
+
+              if (subLegend.id === state.activeBrushId) {
+                subBar.classList.add('ring-1', 'ring-white', 'z-10');
+              }
             } else {
               subBar.style.backgroundColor = 'transparent';
               subBar.style.color = '#64748b';
@@ -887,12 +982,25 @@ document.addEventListener('DOMContentLoaded', () => {
             td.style.backgroundColor = legend.color;
             cellContent.style.color = '#ffffff';
             cellContent.textContent = legend.name;
-            td.title = `${dayName} @ ${slotLabel}\nCategory: ${legend.name}\n(Click to toggle select/unselect)`;
+            
+            let tooltipText = `${dayName} @ ${slotLabel}\nCategory: ${legend.name}`;
+            if (legend.notes) {
+              tooltipText += `\nNotes: "${legend.notes}"`;
+            }
+            tooltipText += `\n(Click to toggle select/unselect)`;
+            td.title = tooltipText;
+
+            if (legend.id === state.activeBrushId) {
+              td.classList.add('ring-2', 'ring-white/80', 'z-10');
+            } else {
+              td.classList.remove('ring-2', 'ring-white/80', 'z-10');
+            }
           } else {
             td.style.backgroundColor = 'transparent';
             cellContent.style.color = '#64748b';
             cellContent.textContent = '';
             td.title = `${dayName} @ ${slotLabel}\nUnallocated (Click to assign active brush)`;
+            td.classList.remove('ring-2', 'ring-white/80', 'z-10');
           }
 
           if (state.activeFilterId !== 'all') {

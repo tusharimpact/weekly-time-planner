@@ -225,14 +225,16 @@
       </div>
 
       <!-- Currently Selected Brush Banner -->
-      <div id="active-brush-bar" class="flex items-center justify-between px-3.5 py-2 bg-slate-900/90 border border-blue-500/30 rounded-xl text-xs">
-        <div class="flex items-center gap-2">
-          <span class="text-slate-400 text-[11px] sm:text-xs">Active Brush:</span>
-          <span id="brush-color-swatch" class="w-3.5 h-3.5 rounded-full bg-blue-500 inline-block shadow-sm"></span>
-          <span id="brush-name" class="font-bold text-white">Sleep</span>
-        </div>
-        <div class="flex items-center gap-3 text-slate-400 text-[11px]">
-          <span class="hidden sm:inline">Tap box to toggle • Right-click / Gear icon on cell to split into 15m/30m sub-slots</span>
+      <div id="active-brush-bar" class="flex flex-col px-3.5 py-2.5 bg-slate-900/90 border border-blue-500/30 rounded-xl text-xs space-y-1.5">
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400 text-[11px] sm:text-xs">Active Brush:</span>
+            <span id="brush-color-swatch" class="w-3.5 h-3.5 rounded-full bg-blue-500 inline-block shadow-sm"></span>
+            <span id="brush-name" class="font-bold text-white">Sleep</span>
+          </div>
+          <div class="flex items-center gap-3 text-slate-400 text-[11px]">
+            <span class="hidden sm:inline">Tap box to toggle • Gear icon on cell to split into 15m/30m sub-slots</span>
+          </div>
         </div>
       </div>
 
