@@ -913,16 +913,22 @@ document.addEventListener('DOMContentLoaded', () => {
         td.dataset.dayIndex = dayIndex;
         td.dataset.slotIndex = slotIndex;
 
-        // Add Cell Split Trigger Button (Gear/Scissors icon)
+        // Add Cell Split Trigger Button (Gear/Sliders icon)
         const btnSplitTrigger = document.createElement('button');
         btnSplitTrigger.className = 'cell-split-trigger p-1 bg-slate-900/90 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-400 text-slate-300 hover:text-white rounded-md shadow transition';
-        btnSplitTrigger.title = 'Split slot into 15m or 30m sub-slots';
+        btnSplitTrigger.title = 'Click to split slot into 15m or 30m sub-slots';
         btnSplitTrigger.innerHTML = `<i data-lucide="sliders" class="w-3 h-3"></i>`;
         btnSplitTrigger.addEventListener('click', (e) => {
           e.stopPropagation();
           openSplitModal(cellKey);
         });
         td.appendChild(btnSplitTrigger);
+
+        // Right-click support on any cell to open sub-slot split modal
+        td.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          openSplitModal(cellKey);
+        });
 
         if (val && typeof val === 'object' && val.split) {
           // SUB-DIVIDED CELL (2 x 30m or 4 x 15m)
