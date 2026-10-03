@@ -6,33 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 1. Constants & Configuration
   const DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  
-  const TIME_SLOTS = [
-    '10:00 PM - 11:00 PM', // Slot 0
-    '11:00 PM - 12:00 AM', // Slot 1
-    '12:00 AM - 01:00 AM', // Slot 2
-    '01:00 AM - 02:00 AM', // Slot 3
-    '02:00 AM - 03:00 AM', // Slot 4
-    '03:00 AM - 04:00 AM', // Slot 5
-    '04:00 AM - 05:00 AM', // Slot 6
-    '05:00 AM - 06:00 AM', // Slot 7
-    '06:00 AM - 07:00 AM', // Slot 8
-    '07:00 AM - 08:00 AM', // Slot 9
-    '08:00 AM - 09:00 AM', // Slot 10
-    '09:00 AM - 10:00 AM', // Slot 11
-    '10:00 AM - 11:00 AM', // Slot 12
-    '11:00 AM - 12:00 PM', // Slot 13
-    '12:00 PM - 01:00 PM', // Slot 14
-    '01:00 PM - 02:00 PM', // Slot 15
-    '02:00 PM - 03:00 PM', // Slot 16
-    '03:00 PM - 04:00 PM', // Slot 17
-    '04:00 PM - 05:00 PM', // Slot 18
-    '05:00 PM - 06:00 PM', // Slot 19
-    '06:00 PM - 07:00 PM', // Slot 20
-    '07:00 PM - 08:00 PM', // Slot 21
-    '08:00 PM - 09:00 PM', // Slot 22
-    '09:00 PM - 10:00 PM', // Slot 23
-  ];
 
   const COLOR_PALETTE = [
     '#3b82f6', // Blue
@@ -71,14 +44,51 @@ document.addEventListener('DOMContentLoaded', () => {
     activeFilterId: 'all',
     viewMode: isMobileInitial ? 'day' : 'grid', // 'day' or 'grid'
     activeDayIndex: 0, // 0 = Saturday
+    unitMinutes: 60, // Default 1 Hour (60 mins). Options: 15, 30, 60, 120, 240
   };
 
+  let TIME_SLOTS = []; // Generated dynamically based on unitMinutes
   let isMouseDown = false;
   let editingLegendId = null;
 
-  // 3. Initialize App
+  // 3. Dynamic Time Slots Generator
+  function generateTimeSlots(unitMins) {
+    const slots = [];
+    const totalSlots = Math.round(1440 / unitMins);
+    const startOffsetMins = 1320; // 10:00 PM = 22 * 60 = 1320 mins
+
+    for (let i = 0; i < totalSlots; i++) {
+      const startMins = (startOffsetMins + i * unitMins) % 1440;
+      const endMins = (startOffsetMins + (i + 1) * unitMins) % 1440;
+      const startStr = formatTime12h(startMins);
+      const endStr = formatTime12h(endMins === 0 ? 0 : endMins);
+      slots.push(`${startStr} - ${endStr}`);
+    }
+    return slots;
+  }
+
+  function formatTime12h(totalMins) {
+    let h = Math.floor(totalMins / 60) % 24;
+    let m = totalMins % 60;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12;
+    if (h12 === 0) h12 = 12;
+    const mStr = m < 10 ? '0' + m : m;
+    const hStr = h12 < 10 ? '0' + h12 : h12;
+    return `${hStr}:${mStr} ${ampm}`;
+  }
+
+  // Helper: Format decimal hours nicely
+  function formatHours(hrs) {
+    if (hrs % 1 === 0) return hrs.toString();
+    return hrs.toFixed(2).replace(/\.?0+$/, '');
+  }
+
+  // 4. Initialize App
   function init() {
     loadStateFromStorage();
+    TIME_SLOTS = generateTimeSlots(state.unitMinutes);
+
     renderLifePerspective();
     renderColorPalette();
     renderLegends();
@@ -94,13 +104,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 4. State Persistence (LocalStorage)
+  // 5. State Persistence (LocalStorage)
   function saveStateToStorage() {
     try {
       localStorage.setItem('168h_planner_state', JSON.stringify({
         legends: state.legends,
         grid: state.grid,
-        userAge: state.userAge
+        userAge: state.userAge,
+        unitMinutes: state.unitMinutes
       }));
     } catch (e) {
       console.error('Failed to save state to localStorage', e);
@@ -115,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (parsed.legends && parsed.legends.length > 0) state.legends = parsed.legends;
         if (parsed.grid) state.grid = parsed.grid;
         if (parsed.userAge !== undefined) state.userAge = parsed.userAge;
+        if (parsed.unitMinutes) state.unitMinutes = parseInt(parsed.unitMinutes) || 60;
 
         if (!state.legends.find(l => l.id === state.activeBrushId)) {
           state.activeBrushId = state.legends[0].id;
@@ -128,22 +140,35 @@ document.addEventListener('DOMContentLoaded', () => {
     applyPreRenderedDefaults();
   }
 
+  /**
+   * Pre-rendered Defaults for ANY time block unit (15m, 30m, 60m, 120m, 240m)
+   */
   function applyPreRenderedDefaults() {
     state.grid = {};
-    
+    const unit = state.unitMinutes || 60;
+    const totalSlots = Math.round(1440 / unit);
+    const startOffsetMins = 1320; // 10 PM
+
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      for (let slot = 0; slot <= 7; slot++) {
-        state.grid[`${dayIndex}_${slot}`] = 'leg_sleep';
-      }
+      for (let slot = 0; slot < totalSlots; slot++) {
+        const startMins = (startOffsetMins + slot * unit) % 1440;
+        
+        // 1. Sleep: 10 PM (1320) to 6 AM (360)
+        const isSleep = (startMins >= 1320 && startMins < 1440) || (startMins >= 0 && startMins < 360);
+        
+        // 2. Routine Work: 6 AM - 8 AM (360-480) & 7 PM - 9 PM (1140-1260)
+        const isRoutine = (startMins >= 360 && startMins < 480) || (startMins >= 1140 && startMins < 1260);
 
-      state.grid[`${dayIndex}_8`] = 'leg_routine';
-      state.grid[`${dayIndex}_9`] = 'leg_routine';
-      state.grid[`${dayIndex}_21`] = 'leg_routine';
-      state.grid[`${dayIndex}_22`] = 'leg_routine';
+        // 3. 9-to-5 Work: Sunday to Thursday (index 1 to 5), 9 AM - 5 PM (540-1020)
+        const isWork = (dayIndex >= 1 && dayIndex <= 5) && (startMins >= 540 && startMins < 1020);
 
-      if (dayIndex >= 1 && dayIndex <= 5) {
-        for (let slot = 11; slot <= 18; slot++) {
-          state.grid[`${dayIndex}_${slot}`] = 'leg_work';
+        const key = `${dayIndex}_${slot}`;
+        if (isSleep) {
+          state.grid[key] = 'leg_sleep';
+        } else if (isRoutine) {
+          state.grid[key] = 'leg_routine';
+        } else if (isWork) {
+          state.grid[key] = 'leg_work';
         }
       }
     }
@@ -151,12 +176,27 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStateToStorage();
   }
 
-  // 5. Render Functions
+  // Change Time Block Unit (15m, 30m, 1h, 2h, 4h)
+  function setTimeBlockUnit(newUnitMins) {
+    state.unitMinutes = newUnitMins;
+    TIME_SLOTS = generateTimeSlots(newUnitMins);
+    applyPreRenderedDefaults(); // Re-apply pre-rendered defaults for new slot resolution
 
-  /**
-   * Render DYNAMIC Life Perspective Calculator Metrics
-   * Recalculates and updates ALL metrics live when age changes!
-   */
+    // Update Unit Badge text
+    const badge = document.getElementById('active-unit-badge');
+    if (badge) {
+      const labels = { 15: '15 Min Blocks', 30: '30 Min Blocks', 60: '1 Hour Blocks', 120: '2 Hour Blocks', 240: '4 Hour Blocks' };
+      badge.textContent = labels[newUnitMins] || `${newUnitMins} Min Blocks`;
+    }
+
+    renderGridTable();
+    renderSingleDayFeed();
+    updateStatistics();
+    saveStateToStorage();
+  }
+
+  // 6. Render Functions
+
   function renderLifePerspective() {
     const age = Math.max(1, Math.min(120, parseInt(state.userAge) || 28));
     const totalWeeks = 4000;
@@ -170,13 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const yearsRemaining = Math.max(0, avgLifespanYears - age).toFixed(1);
     const lifetimeHoursLeft = (weeksRemaining * 168);
 
-    // Update Input value
     const ageInput = document.getElementById('user-age-input');
     if (ageInput && ageInput.value != age) {
       ageInput.value = age;
     }
 
-    // Update Dynamic Banner Text
     const descText = document.getElementById('life-perspective-text');
     if (descText) {
       descText.innerHTML = `
@@ -184,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }
 
-    // Update Metric Badges
     const elWeeksLived = document.getElementById('metric-weeks-lived');
     const elPctLived = document.getElementById('metric-pct-lived');
     if (elWeeksLived) elWeeksLived.textContent = weeksLived.toLocaleString();
@@ -208,7 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elProgressBar) elProgressBar.style.width = `${livedPct}%`;
   }
 
-  // Render View Mode Toggle Tabs
   function renderViewModeToggle() {
     const btnDay = document.getElementById('tab-btn-day');
     const btnGrid = document.getElementById('tab-btn-grid');
@@ -238,16 +274,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const dayName = DAYS[state.activeDayIndex];
     dayHeading.textContent = dayName;
 
-    let dayAllocated = 0;
-    for (let slot = 0; slot < 24; slot++) {
+    const totalSlots = TIME_SLOTS.length;
+    const hoursPerSlot = state.unitMinutes / 60;
+
+    let dayAllocatedSlots = 0;
+    for (let slot = 0; slot < totalSlots; slot++) {
       const key = `${state.activeDayIndex}_${slot}`;
       if (state.grid[key] && state.legends.some(l => l.id === state.grid[key])) {
-        dayAllocated++;
+        dayAllocatedSlots++;
       }
     }
-    const dayUnallocated = 24 - dayAllocated;
+
+    const dayAllocatedHrs = dayAllocatedSlots * hoursPerSlot;
+    const dayUnallocatedHrs = 24 - dayAllocatedHrs;
+
     const subTitle = document.getElementById('active-day-subtitle');
-    if (subTitle) subTitle.textContent = `Allocated: ${dayAllocated} hrs • ${dayUnallocated} hrs Unallocated`;
+    if (subTitle) subTitle.textContent = `Allocated: ${formatHours(dayAllocatedHrs)} hrs • ${formatHours(dayUnallocatedHrs)} hrs Unallocated`;
 
     // Day Navigation Tabs
     const navContainer = document.getElementById('day-tabs-nav');
@@ -270,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Render 24 Hourly Feed Cards
+    // Render Hourly Feed Cards
     const feedContainer = document.getElementById('single-day-feed');
     if (!feedContainer) return;
     feedContainer.innerHTML = '';
@@ -283,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isFilteredOut = state.activeFilterId !== 'all' && legendId !== state.activeFilterId;
 
       const card = document.createElement('div');
-      card.className = `mobile-slot-card p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer select-none ${
+      card.className = `mobile-slot-card p-2.5 sm:p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer select-none ${
         isFilteredOut ? 'opacity-30 grayscale' : ''
       } ${
         legend
@@ -309,10 +351,10 @@ document.addEventListener('DOMContentLoaded', () => {
       statusLabel.className = 'text-[11px] font-medium truncate mt-0.5';
       if (legend) {
         statusLabel.style.color = legend.color;
-        statusLabel.textContent = legend.name;
+        statusLabel.textContent = `${legend.name} (${formatHours(hoursPerSlot)}h)`;
       } else {
         statusLabel.className = 'text-[11px] font-medium text-slate-500 italic';
-        statusLabel.textContent = 'Unallocated (Tap to paint)';
+        statusLabel.textContent = `Unallocated (${formatHours(hoursPerSlot)}h block)`;
       }
 
       textDiv.appendChild(timeLabel);
@@ -366,7 +408,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Mobile Sticky Bottom Toolbar
   function renderMobileStickyToolbar() {
     const chipsContainer = document.getElementById('mobile-legend-chips');
     if (!chipsContainer) return;
@@ -413,7 +454,6 @@ document.addEventListener('DOMContentLoaded', () => {
     chipsContainer.appendChild(eraserChip);
   }
 
-  // Legends & Active Brush Panel
   function renderLegends() {
     const container = document.getElementById('legends-list');
     const filterSelect = document.getElementById('filter-legend-select');
@@ -421,12 +461,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     container.innerHTML = '';
     
-    const hoursCount = {};
-    state.legends.forEach(l => hoursCount[l.id] = 0);
+    const hoursPerSlot = state.unitMinutes / 60;
+    const legendSlotCounts = {};
+    state.legends.forEach(l => legendSlotCounts[l.id] = 0);
     
     Object.values(state.grid).forEach(legendId => {
-      if (hoursCount[legendId] !== undefined) {
-        hoursCount[legendId]++;
+      if (legendSlotCounts[legendId] !== undefined) {
+        legendSlotCounts[legendId]++;
       }
     });
 
@@ -434,11 +475,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     state.legends.forEach(legend => {
       const isSelected = state.activeBrushId === legend.id;
-      const count = hoursCount[legend.id] || 0;
+      const slotCount = legendSlotCounts[legend.id] || 0;
+      const allocatedHrs = slotCount * hoursPerSlot;
 
       const opt = document.createElement('option');
       opt.value = legend.id;
-      opt.textContent = `${legend.name} (${count}h)`;
+      opt.textContent = `${legend.name} (${formatHours(allocatedHrs)}h)`;
       if (state.activeFilterId === legend.id) opt.selected = true;
       filterSelect.appendChild(opt);
 
@@ -468,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <div class="flex items-baseline justify-between text-xs">
           <span class="text-slate-400 font-medium text-[11px]">Allocated:</span>
-          <span class="font-bold text-slate-100 text-xs">${count} <span class="text-[10px] font-normal text-slate-400">hrs</span></span>
+          <span class="font-bold text-slate-100 text-xs">${formatHours(allocatedHrs)} <span class="text-[10px] font-normal text-slate-400">hrs</span></span>
         </div>
       `;
 
@@ -483,7 +525,6 @@ document.addEventListener('DOMContentLoaded', () => {
       container.appendChild(card);
     });
 
-    // Eraser Card
     const isEraserSelected = state.activeBrushId === 'eraser';
     const eraserCard = document.createElement('div');
     eraserCard.className = `p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
@@ -635,26 +676,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Update Header Counters & Percentages
   function updateStatistics() {
-    let allocated = 0;
+    const hoursPerSlot = state.unitMinutes / 60;
+    let filledSlots = 0;
     
     Object.values(state.grid).forEach(legendId => {
       if (legendId && state.legends.some(l => l.id === legendId)) {
-        allocated++;
+        filledSlots++;
       }
     });
 
-    const unallocated = 168 - allocated;
-    const percent = Math.min(100, Math.round((allocated / 168) * 100));
+    const allocatedHrs = filledSlots * hoursPerSlot;
+    const unallocatedHrs = Math.max(0, 168 - allocatedHrs);
+    const percent = Math.min(100, Math.round((allocatedHrs / 168) * 100));
 
     const elAlloc = document.getElementById('stat-allocated');
     const elUnalloc = document.getElementById('stat-unallocated');
     const elPct = document.getElementById('stat-percent');
     const elBar = document.getElementById('stat-progress-bar');
 
-    if (elAlloc) elAlloc.innerHTML = `${allocated} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
-    if (elUnalloc) elUnalloc.innerHTML = `${unallocated} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
+    if (elAlloc) elAlloc.innerHTML = `${formatHours(allocatedHrs)} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
+    if (elUnalloc) elUnalloc.innerHTML = `${formatHours(unallocatedHrs)} <span class="text-[10px] sm:text-xs text-slate-400 font-normal">hrs</span>`;
     if (elPct) elPct.textContent = `${percent}%`;
     if (elBar) elBar.style.width = `${percent}%`;
 
@@ -684,11 +726,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 6. Bind Event Listeners
+  // 7. Bind Event Listeners
   function bindEvents() {
     window.addEventListener('mouseup', () => {
       isMouseDown = false;
     });
+
+    // Time Block Unit Selector Change
+    const blockSelect = document.getElementById('select-block-unit');
+    if (blockSelect) {
+      blockSelect.value = state.unitMinutes.toString();
+      blockSelect.addEventListener('change', (e) => {
+        const newUnit = parseInt(e.target.value) || 60;
+        setTimeBlockUnit(newUnit);
+      });
+    }
 
     // View Mode Tab Switching
     const tabBtnDay = document.getElementById('tab-btn-day');
@@ -726,7 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // DYNAMIC AGE INPUT LISTENERS (Input, Change, Keyup, Wheel)
+    // Dynamic Age Input Listeners
     const ageInput = document.getElementById('user-age-input');
     if (ageInput) {
       const handleAgeChange = (e) => {
@@ -763,7 +815,8 @@ document.addEventListener('DOMContentLoaded', () => {
             slots: TIME_SLOTS,
             legends: state.legends,
             grid: state.grid,
-            age: state.userAge
+            age: state.userAge,
+            unitMinutes: state.unitMinutes
           });
         }
       });

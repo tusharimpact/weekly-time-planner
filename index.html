@@ -115,7 +115,7 @@
       </div>
     </header>
 
-    <!-- Human Life Weeks Perspective Banner (Fully Dynamic Age Calculator) -->
+    <!-- Human Life Weeks Perspective Banner -->
     <section class="bg-gradient-to-r from-indigo-950/80 via-slate-900 to-purple-950/80 border border-indigo-800/50 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden space-y-4">
       <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -187,7 +187,7 @@
       </div>
     </section>
 
-    <!-- Top Legends Control Panel -->
+    <!-- Top Legends Control Panel & Time Block Customizer -->
     <section class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         
@@ -199,19 +199,35 @@
           <p class="text-xs text-slate-400 mt-0.5">Select a legend brush, then tap or drag on schedule cells to paint.</p>
         </div>
 
-        <div class="flex items-center gap-2">
+        <!-- Controls: Time Block Selector, Filter & Add Legend -->
+        <div class="flex flex-wrap items-center gap-2">
+          
+          <!-- TIME BLOCK UNIT DROPDOWN SELECTOR -->
+          <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"></i>
+            <label for="select-block-unit" class="text-[11px] font-semibold text-slate-400 whitespace-nowrap hidden sm:inline">Block Unit:</label>
+            <select id="select-block-unit" class="bg-transparent text-xs text-indigo-300 font-bold focus:outline-none cursor-pointer">
+              <option value="60" selected>1 Hour Blocks (Default)</option>
+              <option value="15">15 Min Blocks</option>
+              <option value="30">30 Min Blocks</option>
+              <option value="120">2 Hour Blocks</option>
+              <option value="240">4 Hour Blocks</option>
+            </select>
+          </div>
+
           <!-- Filter toggle -->
-          <div class="relative flex-1 sm:flex-initial">
-            <select id="filter-legend-select" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-blue-500">
+          <div class="relative">
+            <select id="filter-legend-select" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-blue-500">
               <option value="all">Show All Categories</option>
             </select>
           </div>
 
           <!-- Add Legend Button -->
-          <button id="btn-add-legend" class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-md transition flex-shrink-0">
+          <button id="btn-add-legend" class="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-md transition flex-shrink-0">
             <i data-lucide="plus" class="w-4 h-4"></i>
             <span>Add Legend</span>
           </button>
+
         </div>
 
       </div>
@@ -223,7 +239,10 @@
           <span id="brush-color-swatch" class="w-3.5 h-3.5 rounded-full bg-blue-500 inline-block shadow-sm"></span>
           <span id="brush-name" class="font-bold text-white">Sleep</span>
         </div>
-        <span class="text-slate-400 text-[11px] hidden sm:inline">Tap cells or drag across to paint continuous hours</span>
+        <div class="flex items-center gap-3 text-slate-400 text-[11px]">
+          <span id="active-unit-badge" class="px-2 py-0.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded font-semibold">1 Hour Blocks</span>
+          <span class="hidden sm:inline">Tap cells or drag across to paint continuous hours</span>
+        </div>
       </div>
 
       <!-- Legends Cards Container -->
@@ -282,7 +301,7 @@
 
       <!-- Single Day Hourly Feed -->
       <div id="single-day-feed" class="space-y-2.5">
-        <!-- 24 hourly cards generated dynamically by app.js -->
+        <!-- hourly cards generated dynamically by app.js -->
       </div>
 
     </section>
@@ -297,7 +316,7 @@
             <i data-lucide="calendar" class="w-5 h-5 text-indigo-400"></i>
             <span>Weekly Schedule Matrix (168 Hours)</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Saturday to Friday • 10:00 PM (Night) to 9:00 PM</p>
+          <p id="matrix-subtitle" class="text-xs text-slate-400 mt-0.5">Saturday to Friday • 10:00 PM (Night) to 9:00 PM</p>
         </div>
 
         <div class="flex items-center gap-2 text-xs text-slate-400">
@@ -317,7 +336,7 @@
         <table id="schedule-grid-table" class="w-full border-collapse text-left min-w-[850px] select-none">
           <thead>
             <tr class="bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider border-b border-slate-700">
-              <th class="p-3 w-32 text-center border-r border-slate-700/80 bg-slate-850">
+              <th class="p-3 w-36 text-center border-r border-slate-700/80 bg-slate-850">
                 Time Slot <br/><span class="text-[10px] text-slate-400 font-normal">Starts 10 PM</span>
               </th>
               <th class="p-3 text-center border-r border-slate-700/50">Saturday</th>
@@ -330,7 +349,7 @@
             </tr>
           </thead>
           <tbody id="grid-tbody" class="divide-y divide-slate-800/60 text-xs">
-            <!-- 24 Rows generated dynamically by app.js -->
+            <!-- Rows generated dynamically by app.js -->
           </tbody>
         </table>
       </div>
@@ -350,7 +369,7 @@
     <!-- Footer / Perspective & LocalStorage info -->
     <footer class="text-center py-6 text-xs text-slate-500 space-y-2">
       <p>100% Private & Local • Stored securely in your browser.</p>
-      <p>© 168 Hours Weekly Life OS • Mobile & Desktop Optimized</p>
+      <p>© 168 Hours Weekly Life OS • Custom Block Units (15m, 30m, 1h, 2h, 4h)</p>
     </footer>
 
   </div>

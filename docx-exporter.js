@@ -1,23 +1,13 @@
 /**
  * Word Exporter (.docx) for 168 Hours Weekly Life & Time Planner
- * Generates comprehensive Word documents including:
- * 1. Document Title & Life Perspective Metrics
- * 2. Weekly Category Breakdown & Allocated Task Hours
- * 3. Detailed Day-by-Day Chronological Agenda (Saturday to Friday)
- * 4. Complete 7-Day x 24-Hour Visual Schedule Matrix Table
- * 5. Personal Reflection & Goal Editing Worksheet
+ * Supports customizable time block units (15m, 30m, 1h, 2h, 4h)
  */
 
 window.DocxExporter = {
 
-  /**
-   * Main function to export the weekly plan as a Word document.
-   * @param {Object} state - Current application state { days, slots, legends, grid, age }
-   */
   async exportToWord(state) {
     console.log("Generating comprehensive Word document for weekly 168h plan...", state);
 
-    // Helper: Determine text color (black or white) based on background hex luminance
     const getContrastTextColor = (hexColor) => {
       if (!hexColor || hexColor === 'transparent') return '334155';
       const hex = hexColor.replace('#', '');
@@ -29,7 +19,6 @@ window.DocxExporter = {
       return luminance > 140 ? '0F172A' : 'FFFFFF';
     };
 
-    // Try native docx packer if available
     if (window.docx && window.docx.Document && window.docx.Packer) {
       try {
         await this.generateNativeDocx(state, getContrastTextColor);
@@ -39,26 +28,26 @@ window.DocxExporter = {
       }
     }
 
-    // Fallback: Word XML/HTML Document format
     this.generateWordHtmlDoc(state, getContrastTextColor);
   },
 
-  /**
-   * Native .docx binary generation using docx.js library
-   */
   async generateNativeDocx(state, getContrastTextColor) {
     const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } = window.docx;
 
-    // Calculate legend stats
-    const legendCounts = {};
-    const legendTimeBlocks = {}; // Store chronological blocks per legend
-    state.legends.forEach(l => {
-      legendCounts[l.id] = 0;
-      legendTimeBlocks[l.id] = [];
-    });
-    let unallocatedCount = 0;
+    const unitMins = state.unitMinutes || 60;
+    const hoursPerSlot = unitMins / 60;
 
-    // Day-by-Day Agenda extraction
+    const formatHours = (hrs) => {
+      if (hrs % 1 === 0) return hrs.toString();
+      return hrs.toFixed(2).replace(/\.?0+$/, '');
+    };
+
+    const legendSlotCounts = {};
+    state.legends.forEach(l => legendSlotCounts[l.id] = 0);
+    let unallocatedSlotCount = 0;
+
+    const totalSlots = state.slots.length;
+
     const dailyAgendas = state.days.map((dayName, dayIndex) => {
       const items = [];
       state.slots.forEach((slotLabel, slotIndex) => {
@@ -73,22 +62,21 @@ window.DocxExporter = {
           color: legend ? legend.color : '#64748b'
         });
 
-        if (legendId && legendCounts[legendId] !== undefined) {
-          legendCounts[legendId]++;
+        if (legendId && legendSlotCounts[legendId] !== undefined) {
+          legendSlotCounts[legendId]++;
         } else {
-          unallocatedCount++;
+          unallocatedSlotCount++;
         }
       });
       return { dayName, dayIndex, items };
     });
 
+    const unallocatedHrs = unallocatedSlotCount * hoursPerSlot;
     const age = state.userAge || 28;
     const weeksLived = Math.round(age * 52.1429);
     const weeksRemaining = Math.max(0, 4000 - weeksLived);
 
-    // Build document children
     const docChildren = [
-      // Document Title
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 120 },
@@ -102,13 +90,12 @@ window.DocxExporter = {
         ]
       }),
 
-      // Life Perspective Banner
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 300 },
         children: [
           new TextRun({
-            text: `Human Life Perspective: ~4,000 Weeks (~76.9 Years) | Age: ${age} | Weeks Lived: ${weeksLived.toLocaleString()} | Weeks Remaining: ${weeksRemaining.toLocaleString()}`,
+            text: `Human Life Perspective: ~4,000 Weeks (~76.9 Years) | Age: ${age} | Weeks Lived: ${weeksLived.toLocaleString()} | Weeks Remaining: ${weeksRemaining.toLocaleString()} | Time Block Unit: ${unitMins} Mins`,
             italic: true,
             size: 20,
             color: "475569"
@@ -116,48 +103,46 @@ window.DocxExporter = {
         ]
       }),
 
-      // Section 1: Summary Table
       new Paragraph({
         spacing: { before: 200, after: 120 },
         children: [
-          new TextRun({ text: "1. Weekly Allocation & Task Summary (Total 168 Hours)", bold: true, size: 24, color: "0F172A" })
+          new TextRun({ text: "1. Weekly Allocation Summary (Total 168 Hours)", bold: true, size: 24, color: "0F172A" })
         ]
       })
     ];
 
-    // Summary Table Headers
     const summaryRows = [
       new TableRow({
         children: [
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Category / Legend", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Allocated Hours", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "% of Week", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Primary Time Window", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Block Count", bold: true, color: "0F172A" })] })], shading: { fill: "E2E8F0" } }),
         ]
       })
     ];
 
     state.legends.forEach(l => {
-      const hours = legendCounts[l.id] || 0;
+      const slotCount = legendSlotCounts[l.id] || 0;
+      const hours = slotCount * hoursPerSlot;
       const pct = ((hours / 168) * 100).toFixed(1);
       summaryRows.push(new TableRow({
         children: [
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: l.name, bold: true, color: l.color.replace('#', '') })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${hours} hrs` })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${formatHours(hours)} hrs` })] })] }),
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${pct}%` })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: hours > 0 ? "Scheduled in Matrix" : "Not allocated" })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${slotCount} blocks` })] })] }),
         ]
       }));
     });
 
-    // Unallocated row
-    const unallocatedPct = ((unallocatedCount / 168) * 100).toFixed(1);
+    const unallocatedPct = ((unallocatedHrs / 168) * 100).toFixed(1);
     summaryRows.push(new TableRow({
       children: [
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Unallocated Time", bold: true, color: "64748B" })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${unallocatedCount} hrs` })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${formatHours(unallocatedHrs)} hrs` })] })] }),
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${unallocatedPct}%` })] })] }),
-        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Free Time / Buffer" })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${unallocatedSlotCount} blocks` })] })] }),
       ]
     }));
 
@@ -166,7 +151,7 @@ window.DocxExporter = {
       rows: summaryRows
     }));
 
-    // Section 2: Detailed Day-by-Day Chronological Agenda
+    // Section 2: Detailed Day-by-Day Agenda
     docChildren.push(new Paragraph({
       spacing: { before: 400, after: 120 },
       children: [
@@ -182,7 +167,6 @@ window.DocxExporter = {
         ]
       }));
 
-      // Group consecutive slots with identical legend into single task block
       const blocks = [];
       let currentBlock = null;
 
@@ -195,11 +179,11 @@ window.DocxExporter = {
             color: item.color,
             startSlot: item.timeSlot.split(' - ')[0],
             endSlot: item.timeSlot.split(' - ')[1],
-            count: 1
+            slotCount: 1
           };
         } else {
           currentBlock.endSlot = item.timeSlot.split(' - ')[1];
-          currentBlock.count++;
+          currentBlock.slotCount++;
         }
       });
       if (currentBlock) blocks.push(currentBlock);
@@ -215,6 +199,7 @@ window.DocxExporter = {
       ];
 
       blocks.forEach(b => {
+        const durationHrs = b.slotCount * hoursPerSlot;
         dayRows.push(new TableRow({
           children: [
             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${b.startSlot} - ${b.endSlot}`, size: 14, bold: true })] })] }),
@@ -222,7 +207,7 @@ window.DocxExporter = {
               children: [new Paragraph({ children: [new TextRun({ text: b.legendName, size: 14, bold: true, color: b.color.replace('#', '') })] })],
               shading: { fill: b.legendId !== 'unallocated' ? "F8FAFC" : "FFFFFF" }
             }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${b.count} hour${b.count > 1 ? 's' : ''}`, size: 14 })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${formatHours(durationHrs)} hrs`, size: 14 })] })] }),
           ]
         }));
       });
@@ -233,11 +218,11 @@ window.DocxExporter = {
       }));
     });
 
-    // Section 3: Visual 7-Day x 24-Hour Matrix Schedule Table
+    // Section 3: Visual Schedule Matrix
     docChildren.push(new Paragraph({
       spacing: { before: 400, after: 120 },
       children: [
-        new TextRun({ text: "3. Full Weekly 168-Hour Schedule Matrix (7 Days × 24 Hours)", bold: true, size: 24, color: "0F172A" })
+        new TextRun({ text: `3. Full Weekly Schedule Matrix (${unitMins} Min Blocks)`, bold: true, size: 24, color: "0F172A" })
       ]
     }));
 
@@ -287,9 +272,9 @@ window.DocxExporter = {
         children: [new TextRun({ text: "Use this section in Microsoft Word to manually document your reflections, goal milestones, and productivity notes:", italic: true, size: 16, color: "475569" })]
       }),
       new Paragraph({ spacing: { before: 100 }, children: [new TextRun({ text: "• Primary Focus Goal: ____________________________________________________" })] }),
-      new Paragraph({ spacing: { before: 80 }, children: [new TextRun({ text: "• Secondary Focus Goal: __________________________________________________" })] }),
-      new Paragraph({ spacing: { before: 80 }, children: [new TextRun({ text: "• Habit Tracker: ________________________________________________________" })] }),
-      new Paragraph({ spacing: { before: 80 }, children: [new TextRun({ text: "• End of Week Reflection: ________________________________________________" })] })
+      new Paragraph({ spacing: { before: 80 }, children: [new TextRun({ text: "• Secondary Goal: ________________________________________________________" })] }),
+      new Paragraph({ spacing: { before: 80 }, children: [new TextRun({ text: "• Habit Milestones: _______________________________________________________" })] }),
+      new Paragraph({ spacing: { before: 80 }, children: [new TextRun({ text: "• Weekly Reflection Notes: ________________________________________________" })] })
     );
 
     const doc = new Document({
@@ -300,15 +285,19 @@ window.DocxExporter = {
     this.downloadFile(blob, `Weekly_168_Hour_Plan.docx`);
   },
 
-  /**
-   * Word HTML Document format fallback (.doc / .docx compatible)
-   */
   generateWordHtmlDoc(state, getContrastTextColor) {
-    const legendCounts = {};
-    state.legends.forEach(l => legendCounts[l.id] = 0);
-    let unallocatedCount = 0;
+    const unitMins = state.unitMinutes || 60;
+    const hoursPerSlot = unitMins / 60;
 
-    // Day-by-Day Agenda extraction
+    const formatHours = (hrs) => {
+      if (hrs % 1 === 0) return hrs.toString();
+      return hrs.toFixed(2).replace(/\.?0+$/, '');
+    };
+
+    const legendSlotCounts = {};
+    state.legends.forEach(l => legendSlotCounts[l.id] = 0);
+    let unallocatedSlotCount = 0;
+
     const dailyAgendas = state.days.map((dayName, dayIndex) => {
       const items = [];
       state.slots.forEach((slotLabel, slotIndex) => {
@@ -323,46 +312,45 @@ window.DocxExporter = {
           color: legend ? legend.color : '#64748b'
         });
 
-        if (legendId && legendCounts[legendId] !== undefined) {
-          legendCounts[legendId]++;
+        if (legendId && legendSlotCounts[legendId] !== undefined) {
+          legendSlotCounts[legendId]++;
         } else {
-          unallocatedCount++;
+          unallocatedSlotCount++;
         }
       });
       return { dayName, dayIndex, items };
     });
 
+    const unallocatedHrs = unallocatedSlotCount * hoursPerSlot;
     const age = state.userAge || 28;
     const weeksLived = Math.round(age * 52.1429);
     const weeksRemaining = Math.max(0, 4000 - weeksLived);
 
-    // Build Legend Rows HTML
     let legendRowsHtml = state.legends.map(l => {
-      const hrs = legendCounts[l.id] || 0;
+      const slotCount = legendSlotCounts[l.id] || 0;
+      const hrs = slotCount * hoursPerSlot;
       const pct = ((hrs / 168) * 100).toFixed(1);
       return `
         <tr>
           <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; color: ${l.color};">${l.name}</td>
-          <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${hrs} hrs</td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatHours(hrs)} hrs</td>
           <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${pct}%</td>
-          <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569;">Allocated in weekly plan</td>
+          <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569;">${slotCount} blocks (${unitMins}m each)</td>
         </tr>
       `;
     }).join('');
 
-    const unallocatedPct = ((unallocatedCount / 168) * 100).toFixed(1);
+    const unallocatedPct = ((unallocatedHrs / 168) * 100).toFixed(1);
     legendRowsHtml += `
       <tr>
         <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #64748b;">Unallocated Time</td>
-        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${unallocatedCount} hrs</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatHours(unallocatedHrs)} hrs</td>
         <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${unallocatedPct}%</td>
-        <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569;">Free buffer time</td>
+        <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569;">${unallocatedSlotCount} free blocks</td>
       </tr>
     `;
 
-    // Build Day-by-Day Agenda HTML
     let dailyAgendaHtml = dailyAgendas.map(dayAgenda => {
-      // Group consecutive blocks
       const blocks = [];
       let currentBlock = null;
 
@@ -375,22 +363,25 @@ window.DocxExporter = {
             color: item.color,
             startSlot: item.timeSlot.split(' - ')[0],
             endSlot: item.timeSlot.split(' - ')[1],
-            count: 1
+            slotCount: 1
           };
         } else {
           currentBlock.endSlot = item.timeSlot.split(' - ')[1];
-          currentBlock.count++;
+          currentBlock.slotCount++;
         }
       });
       if (currentBlock) blocks.push(currentBlock);
 
-      const blockRows = blocks.map(b => `
-        <tr>
-          <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold; font-size: 11px; text-align: center;">${b.startSlot} - ${b.endSlot}</td>
-          <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold; font-size: 11px; color: ${b.color};">${b.legendName}</td>
-          <td style="padding: 6px; border: 1px solid #cbd5e1; font-size: 11px; text-align: center;">${b.count} hr${b.count > 1 ? 's' : ''}</td>
-        </tr>
-      `).join('');
+      const blockRows = blocks.map(b => {
+        const durationHrs = b.slotCount * hoursPerSlot;
+        return `
+          <tr>
+            <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold; font-size: 11px; text-align: center;">${b.startSlot} - ${b.endSlot}</td>
+            <td style="padding: 6px; border: 1px solid #cbd5e1; font-weight: bold; font-size: 11px; color: ${b.color};">${b.legendName}</td>
+            <td style="padding: 6px; border: 1px solid #cbd5e1; font-size: 11px; text-align: center;">${formatHours(durationHrs)} hrs</td>
+          </tr>
+        `;
+      }).join('');
 
       return `
         <div style="margin-top: 15px; margin-bottom: 20px;">
@@ -411,7 +402,6 @@ window.DocxExporter = {
       `;
     }).join('');
 
-    // Build 7-Day Matrix HTML
     let gridHeaderHtml = state.days.map(d => `<th style="padding: 6px; border: 1px solid #94a3b8; background-color: #1e293b; color: white; font-size: 11px;">${d}</th>`).join('');
 
     let gridRowsHtml = state.slots.map((slotLabel, slotIndex) => {
@@ -451,7 +441,7 @@ window.DocxExporter = {
       <body>
         <h1>MY WEEKLY 168-HOUR TIME & TASK PLAN</h1>
         <div class="subtitle">
-          Human Life Perspective: ~4,000 Weeks (~76.9 Years) | Age: ${age} | Weeks Lived: ${weeksLived.toLocaleString()} | Weeks Remaining: ${weeksRemaining.toLocaleString()}
+          Human Life Perspective: ~4,000 Weeks (~76.9 Years) | Age: ${age} | Weeks Lived: ${weeksLived.toLocaleString()} | Weeks Remaining: ${weeksRemaining.toLocaleString()} | Time Block Unit: ${unitMins} Mins
         </div>
 
         <div class="section-title">1. Weekly Category Allocation (168 Hours Total)</div>
@@ -461,7 +451,7 @@ window.DocxExporter = {
               <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Category / Legend</th>
               <th style="padding: 8px; border: 1px solid #cbd5e1;">Allocated Hours</th>
               <th style="padding: 8px; border: 1px solid #cbd5e1;">% of Week</th>
-              <th style="padding: 8px; border: 1px solid #cbd5e1;">Notes</th>
+              <th style="padding: 8px; border: 1px solid #cbd5e1;">Block Details</th>
             </tr>
           </thead>
           <tbody>
@@ -472,7 +462,7 @@ window.DocxExporter = {
         <div class="section-title">2. Detailed Day-by-Day Task Agenda (Saturday to Friday)</div>
         ${dailyAgendaHtml}
 
-        <div class="section-title">3. Full 7-Day × 24-Hour Schedule Matrix (10:00 PM to 9:00 PM)</div>
+        <div class="section-title">3. Full 7-Day × 24-Hour Schedule Matrix (${unitMins} Min Blocks)</div>
         <table>
           <thead>
             <tr>
