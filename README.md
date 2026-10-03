@@ -44,15 +44,21 @@ To save time, the planner pre-renders essential weekly routines:
 
 ## ✨ Key Features
 
-- 📅 **168-Hour Schedule Matrix:** 7 Days (Sat–Fri) × 24 Vertical Hours (10 PM–9 PM).
+- ⏰ **Custom Time Block Units:** Select your preferred planning block granularity from the top bar dropdown:
+  - **1 Hour Blocks** (Default - 168 total blocks)
+  - **15 Min Blocks** (672 total blocks for micro-tasking)
+  - **30 Min Blocks** (336 total blocks)
+  - **2 Hour Blocks** (84 total blocks)
+  - **4 Hour Blocks** (42 total blocks)
+- 📅 **168-Hour Schedule Matrix:** 7 Days (Sat–Fri) × Vertical Time Slots (10 PM–9 PM).
 - 🖌️ **Click & Drag-to-Paint:** Select an active legend brush and drag across cells to rapidly assign blocks of time.
 - 🎨 **Dynamic Legend System:** Create, edit, and update custom categories with color pickers and palettes.
 - 📄 **Microsoft Word (`.docx`) Export:** Download a complete, beautifully formatted `.docx` file containing:
   - Weekly Category Summary Table.
   - Detailed Day-by-Day Chronological Task Agenda.
-  - Full 7-Day × 24-Hour Visual Schedule Matrix Table.
+  - Full 7-Day Visual Schedule Matrix Table.
   - Personal Reflections & Goal Worksheet.
-- ⌛ **Human Life Calculator:** Input your age to calculate weeks lived, weeks remaining, and percentage completed of ~4,000 weeks.
+- ⌛ **Human Life Calculator:** Input your age to calculate weeks lived, weeks remaining, percentage completed, and lifetime hours left.
 - 🔒 **100% Client-Side Privacy:** All data is persisted safely in browser `localStorage`. Zero server tracking.
 
 ---
